@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Model Performance on NHANES 2017–2018 Test Set}
+  \label{tab:model_perf}
+  \small
+  \begin{tabular}{lrrrrrrr}
+    \hline
+    Config & Input & Model & Accuracy & Precision & Recall & F1 & AUC-ROC \\
+    \hline
+    measured_rf & measured & RF & 0.8665 & 0.6667 & 0.0333 & 0.0635 & 0.7678 \\
+    measured_lr & measured & LR & 0.8586 & 0.2727 & 0.025 & 0.0458 & 0.7613 \\
+    reported_rf & reported & RF & 0.8665 & 0.6667 & 0.0333 & 0.0635 & 0.7603 \\
+    reported_lr & reported & LR & 0.8597 & 0.3333 & 0.0333 & 0.0606 & 0.7696 \\
+    \hline
+  \end{tabular}
+\end{table}

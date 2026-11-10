@@ -1,0 +1,26 @@
+
+======================================================================
+  MAIN FINDING (reported_rf_shap, N=884 patients)
+======================================================================
+
+  1 SHAP explanation ≈ 12.4 blind attempts (mean)
+  1 SHAP explanation ≈ 0.0 blind attempts (median)
+  95% CI (mean): [10.54, 14.53]
+
+  64% of patients: explanation provides ZERO benefit
+  17% of patients: explanation worth 10+ blind attempts
+
+  Pre-registered interpretation: MODERATE THREAT — Explanations offer some advantage. Caution RECOMMENDED.
+======================================================================
+
+
+All Configurations:
+--------------------------------------------------
+  reported_rf_shap                N*=12.43  (median=0.00)
+  reported_rf_lime                N*=9.41  (median=0.00)
+  reported_lr_shap                N*=22.77  (median=0.00)
+  reported_lr_lime                N*=22.71  (median=0.00)
+  measured_rf_shap                N*=10.27  (median=0.00)
+  measured_rf_lime                N*=9.01  (median=0.00)
+  measured_lr_shap                N*=23.05  (median=0.00)
+  measured_lr_lime                N*=21.27  (median=0.00)

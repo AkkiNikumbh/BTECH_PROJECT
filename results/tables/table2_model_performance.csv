@@ -1,0 +1,5 @@
+Config,Input,Model,Accuracy,Precision,Recall,F1,AUC-ROC
+measured_rf,measured,RF,0.8665,0.6667,0.0333,0.0635,0.7678
+measured_lr,measured,LR,0.8586,0.2727,0.025,0.0458,0.7613
+reported_rf,reported,RF,0.8665,0.6667,0.0333,0.0635,0.7603
+reported_lr,reported,LR,0.8597,0.3333,0.0333,0.0606,0.7696
