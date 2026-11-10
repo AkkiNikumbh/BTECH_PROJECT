@@ -10,6 +10,20 @@
 
 ---
 
+> ### 🔧 v2 — implementation fixes
+> This is a **fixed copy** of [`Akshat-stack47/BTP-XAI-Gaming`](https://github.com/Akshat-stack47/BTP-XAI-Gaming),
+> which stays unchanged as the comparison baseline. Four implementation bugs are fixed:
+> (1) the measured model was attacked through nurse-measured values,
+> (2) the LIME-guided attack sometimes moved in the wrong direction,
+> (3) valid self-reported heights/weights were deleted as "refused" codes,
+> (5) the final run used the 2017–18 lie budget instead of the pre-registered 2015–16 one.
+> Details: [`docs/fixes_v2.md`](docs/fixes_v2.md).
+>
+> ⚠️ **The results, figures and tables below are still the OLD outputs from the baseline code.**
+> Re-run the pipeline to regenerate them with the fixes.
+
+---
+
 ## 📋 Overview
 
 This project investigates whether **XAI explanations (SHAP/LIME) create a gaming vulnerability** in clinical AI systems.

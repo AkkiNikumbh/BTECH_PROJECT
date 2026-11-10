@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from src.config import set_all_seeds, DATA_PROCESSED, RESULTS_FIGURES, RESULTS_TABLES, N_BLIND_ATTEMPTS
+from src.config import (set_all_seeds, DATA_PROCESSED, RESULTS_FIGURES, RESULTS_TABLES,
+                        N_BLIND_ATTEMPTS, get_gameable_features)
 from src.models import train_all_models
 from src.explanations import ExplanationGenerator
 from src.adversarial import AdversarialSimulator
@@ -49,13 +50,11 @@ print(f"[DATA] Lie budget: height +/-{lie_budget['height']['max_lie']:.2f}cm | "
 print("\n[MODELS] Training all 4 models...")
 models, split = train_all_models(X_meas, X_rep, y, fn_meas, fn_rep)
 
-# Gameable features (self-reported height/weight columns)
-gameable_meas = [f for f in fn_meas if 'self' in f]
-gameable_rep  = [f for f in fn_rep  if 'self' in f]
-if not gameable_rep:
-    gameable_rep = [f for f in fn_rep if 'height' in f or 'weight' in f]
-if not gameable_meas:
-    gameable_meas = [f for f in fn_meas if 'height' in f or 'weight' in f]
+# Gameable features (self-reported height/weight columns only).
+# FIX 1: the measured model has NO gameable features — nurse-measured
+# values cannot be lied about (old code fell back to attacking them).
+gameable_meas = get_gameable_features(fn_meas)   # -> []
+gameable_rep  = get_gameable_features(fn_rep)    # -> self_height_cm, self_weight_kg
 
 print(f"\n[ADVERSARY] Gameable features (reported model): {gameable_rep}")
 

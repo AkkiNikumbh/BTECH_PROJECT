@@ -74,15 +74,30 @@ class AdversarialSimulator:
             x_original.reshape(1, -1)
         )[0])
 
+        # FIX 1: nothing the patient can lie about (Model A) -> no attack.
+        # Skip the (slow) explanation call entirely.
+        if not self.gameable_features:
+            return {
+                'new_x': x_original.copy(),
+                'original_score': original_score,
+                'new_score': original_score,
+                'score_reduction': 0.0,
+                'changed_feature': None,
+                'change_amount': 0.0,
+                'method': explanation_method,
+            }
+
         # Get feature attributions
         if explanation_method == 'shap':
             attributions = self.explainer.get_shap_explanation(x_original)
         else:
             attributions = self.explainer.get_lime_explanation(x_original)
 
-        # Find the most important gameable feature
-        top_feat, top_val = self.explainer.get_top_gameable_feature(
-            attributions, self.gameable_features
+        # Find the most important gameable feature AND the risk-lowering
+        # direction (FIX 2: direction is now read from the LIME bin
+        # condition, not only from the sign of the weight)
+        top_feat, top_val, direction = self.explainer.get_top_gameable_feature(
+            attributions, self.gameable_features, x_single=x_original
         )
 
         if top_feat is None:
@@ -100,9 +115,6 @@ class AdversarialSimulator:
         budget_key = self._get_budget_key(top_feat)
         max_change = self.lie_budget[budget_key]['max_lie']
 
-        # Direction: positive attribution → feature pushes score UP → decrease it
-        top_val = float(top_val)
-        direction = -1 if top_val > 0 else 1
         change = direction * max_change
 
         new_x = x_original.copy()
@@ -154,6 +166,11 @@ class AdversarialSimulator:
 
         best_score = original_score
         reductions_at_n = {}
+
+        # FIX 1: a model with no gameable features (Model A, nurse-measured
+        # inputs) cannot be attacked — every attempt leaves the score as is.
+        if not self.gameable_features:
+            return {n: 0.0 for n in blind_attempts_list}
 
         for attempt in range(1, max_n + 1):
             # Random feature and perturbation within lie budget

@@ -49,6 +49,24 @@ N_BLIND_ATTEMPTS = [1, 2, 3, 5, 10, 15, 20, 30, 50, 100]
 # ^ The number of blind queries we test against one explanation
 
 # ============================================================
+# GAMEABLE FEATURES — what a patient can actually lie about
+# ============================================================
+# Only SELF-REPORTED height/weight are gameable (see docs/column_mapping.md
+# and docs/analysis_plan.md §4). Nurse-measured height/weight
+# (measured_height_cm, measured_weight_kg) are NOT gameable: the patient
+# cannot change what the nurse measures. So Model A (measured inputs) has
+# no gameable features and cannot be attacked with a height/weight lie.
+GAMEABLE_FEATURES = ['self_height_cm', 'self_weight_kg']
+
+
+def get_gameable_features(feature_names):
+    """Return the features in `feature_names` a patient can lie about.
+
+    Returns an empty list for the measured-input model (Model A).
+    """
+    return [f for f in feature_names if f in GAMEABLE_FEATURES]
+
+# ============================================================
 # FINAL CONFIG — Locked after pre-registration (Stage 6)
 # Do NOT modify after publishing the analysis plan.
 # ============================================================

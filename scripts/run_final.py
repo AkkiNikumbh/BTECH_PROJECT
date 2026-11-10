@@ -30,7 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from src.config import (
     set_all_seeds, DATA_RAW, DATA_PROCESSED,
-    RESULTS_FIGURES, RESULTS_TABLES, FINAL_CONFIG, N_BLIND_ATTEMPTS
+    RESULTS_FIGURES, RESULTS_TABLES, FINAL_CONFIG, N_BLIND_ATTEMPTS,
+    get_gameable_features
 )
 from src.data_loader import merge_nhanes, clean_nhanes, create_diabetes_target, prepare_feature_sets
 from src.gap_analysis import compute_reporting_gap, define_lie_budget, plot_reporting_gaps
@@ -47,7 +48,9 @@ set_all_seeds()
 os.makedirs(RESULTS_FIGURES, exist_ok=True)
 os.makedirs(RESULTS_TABLES, exist_ok=True)
 
-RESUME_DIR = os.path.join(DATA_PROCESSED, 'final_run_cache')
+# New cache dir for the fixed code: the old 'final_run_cache' holds results
+# from the buggy version and must NOT be silently re-loaded on resume.
+RESUME_DIR = os.path.join(DATA_PROCESSED, 'final_run_cache_v2_fixed')
 os.makedirs(RESUME_DIR, exist_ok=True)
 
 BLIND_ATTEMPTS = FINAL_CONFIG['blind_attempts']
@@ -133,8 +136,17 @@ for feature in ['height', 'weight']:
     print(f"  {feature:6s}: dev={dev_lie:.2f}{unit} | holdout={new_lie:.2f}{unit} "
           f"| diff={diff:+.2f}{unit} ({diff/dev_lie*100:+.1f}%)")
 
-print("\n  NOTE: We use the 2017-2018 lie budget for the final experiment")
-print("  (pre-registered: lie budget is computed from the test cycle data)")
+# FIX 5: the pre-registered lie budget comes from 2015-2016 ONLY
+# (docs/analysis_plan.md §3). The 2017-2018 gap above is computed only to
+# report how stable the gap is across cycles; it is NOT used to attack.
+# (Previously the 2017-2018 budget was used, which also leaked the
+# held-out test patients' own gaps into the attack size.)
+lie_budget_used = lie_budget_dev
+print("\n  NOTE: Using the PRE-REGISTERED 2015-2016 lie budget for the attack:")
+for feature in ['height', 'weight']:
+    unit = 'cm' if feature == 'height' else 'kg'
+    print(f"    {feature:6s}: +/-{lie_budget_used[feature]['max_lie']:.2f}{unit}")
+print("  (2017-2018 gap is reported for comparison only)")
 
 # ============================================================
 # STEP 3: Prepare feature sets
@@ -153,7 +165,10 @@ holdout_save = {
     'y': y,
     'feature_names_measured': fn_meas,
     'feature_names_reported': fn_rep,
+    # 'lie_budget' = gap OBSERVED in 2017-2018 (reporting only; read by
+    # run_analysis.py Table 3). 'lie_budget_used' = what the attack used.
     'lie_budget': lie_budget_2018,
+    'lie_budget_used': lie_budget_used,
     'df_complete': df_complete,
     'gap_comparison': gap_comparison,
 }
@@ -190,11 +205,10 @@ all_results = {}
 for input_type in ['reported', 'measured']:   # reported first (main hypothesis)
     X = X_rep if input_type == 'reported' else X_meas
     fn = fn_rep if input_type == 'reported' else fn_meas
-    gameable = [f for f in fn if 'self' in f or 'height' in f or 'weight' in f
-                if 'measured' not in f]
-    if not gameable:
-        # fallback: any height or weight feature
-        gameable = [f for f in fn if 'height' in f or 'weight' in f]
+    # FIX 1: only self-reported height/weight are gameable. For the
+    # measured model this is EMPTY — nurse-measured values cannot be lied
+    # about (the old code fell back to attacking measured_height/weight).
+    gameable = get_gameable_features(fn)
 
     X_train = X[split['idx_train']]
     X_test  = X[split['idx_test']]
@@ -204,7 +218,7 @@ for input_type in ['reported', 'measured']:   # reported first (main hypothesis)
         model = models[model_key]
         explainer = ExplanationGenerator(model, X_train, fn)
         simulator = AdversarialSimulator(
-            model, explainer, lie_budget_2018, gameable, fn
+            model, explainer, lie_budget_used, gameable, fn
         )
 
         for exp_method in ['shap', 'lime']:
@@ -345,8 +359,12 @@ master = {
         'cycle': '2017_2018',
         'n_patients_total': int(len(y)),
         'diabetes_prevalence_pct': round(float(y.mean()) * 100, 2),
-        'lie_budget': {k: {kk: round(float(vv), 3) for kk, vv in v.items()}
-                       for k, v in lie_budget_2018.items()},
+        'lie_budget_used': {k: {kk: (round(float(vv), 3) if not isinstance(vv, str) else vv)
+                                for kk, vv in v.items()}
+                            for k, v in lie_budget_used.items()},
+        'lie_budget_observed_2017_2018': {k: {kk: (round(float(vv), 3) if not isinstance(vv, str) else vv)
+                                              for kk, vv in v.items()}
+                                          for k, v in lie_budget_2018.items()},
         'gap_comparison': gap_comparison,
         'total_runtime_hours': round(elapsed_total / 3600, 2),
     },

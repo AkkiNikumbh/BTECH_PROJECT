@@ -64,6 +64,28 @@ def merge_nhanes(cycle='2015_2016'):
     return merged
 
 
+# NHANES "Refused" / "Don't know" codes, per variable (from the codebooks).
+# WHD010 (height, inches) and WHD020 (weight, pounds) use 7777 / 9999;
+# yes/no and category questions use 7 / 9.
+NHANES_MISSING_CODES = {
+    'WHD010':   [7777, 9999],
+    'WHD020':   [7777, 9999],
+    'SMQ020':   [7, 9],
+    'PAQ605':   [7, 9],
+    'PAQ650':   [7, 9],
+    'DMDEDUC2': [7, 9],
+}
+
+
+def replace_missing_codes(df):
+    """Replace NHANES refused/don't-know codes with NaN, per column."""
+    df = df.copy()
+    for col, codes in NHANES_MISSING_CODES.items():
+        if col in df.columns:
+            df[col] = df[col].replace(codes, np.nan)
+    return df
+
+
 def clean_nhanes(df):
     """
     Clean the merged NHANES dataset.
@@ -80,12 +102,12 @@ def clean_nhanes(df):
     df = df[df['RIDAGEYR'] >= 18].copy()
     print(f"[CLEAN] After filtering adults (age>=18): {len(df)} rows")
 
-    # Step 2: Replace NHANES special codes with NaN
-    refuse_codes = [7, 9, 77, 99, 777, 999, 7777, 9999, 77777, 99999]
-    questionnaire_cols = ['WHD010', 'WHD020', 'SMQ020', 'PAQ605', 'PAQ650', 'DMDEDUC2']
-    for col in questionnaire_cols:
-        if col in df.columns:
-            df[col] = df[col].replace(refuse_codes, np.nan)
+    # Step 2: Replace NHANES special codes with NaN — PER COLUMN.
+    # FIX 3: the old code applied one shared list [7, 9, 77, 99, 777, ...]
+    # to every column, which deleted VALID self-reports such as a height
+    # of 77 inches (195.6 cm) or a weight of 99 lb. Codes below are from
+    # the NHANES codebooks for these variables.
+    df = replace_missing_codes(df)
 
     # Step 3: Unit conversion for self-reported height/weight
     # WHD010 = self-reported height in INCHES
