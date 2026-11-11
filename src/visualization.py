@@ -136,8 +136,8 @@ def plot_model_comparison(all_results, save_path=None):
         r_key = f'reported_{suffix}'
         if m_key in all_results and r_key in all_results:
             configs.append(suffix.upper().replace('_', '+'))
-            measured_vals.append(all_results[m_key]['summary']['median_equivalence'])
-            reported_vals.append(all_results[r_key]['summary']['median_equivalence'])
+            measured_vals.append(all_results[m_key]['summary']['nstar'])
+            reported_vals.append(all_results[r_key]['summary']['nstar'])
 
     if not configs:
         return
@@ -265,7 +265,7 @@ def fig2_main_result_panel(all_results, blind_attempts_list, save_path=None):
                    label=f'1 explanation ({mean_exp:.4f})')
         ax.axhspan(ci_lo, ci_hi, alpha=0.08, color=COLORS['explanation'])
 
-        n_star = data['summary']['mean_equivalence']
+        n_star = data['summary']['nstar']
         ax.axvline(x=n_star, color='#2C3E50', linestyle=':', linewidth=1.5, alpha=0.8)
         ax.annotate(f'N*≈{n_star:.1f}', xy=(n_star, mean_exp),
                     xytext=(8, 8), textcoords='offset points',
@@ -356,8 +356,8 @@ def fig4_model_ab_comparison(all_results, save_path=None):
         r_key = f'reported_{suffix}'
         if m_key in all_results and r_key in all_results:
             configs.append(suffix.upper().replace('_', '+'))
-            measured_vals.append(all_results[m_key]['summary']['mean_equivalence'])
-            reported_vals.append(all_results[r_key]['summary']['mean_equivalence'])
+            measured_vals.append(all_results[m_key]['summary']['nstar'])
+            reported_vals.append(all_results[r_key]['summary']['nstar'])
 
     if not configs:
         return
@@ -406,8 +406,8 @@ def fig5_shap_lime_scatter(all_results, save_path=None):
         k_lime = f'{prefix}_lime'
         if k_shap in all_results and k_lime in all_results:
             pairs.append((
-                all_results[k_shap]['summary']['mean_equivalence'],
-                all_results[k_lime]['summary']['mean_equivalence'],
+                all_results[k_shap]['summary']['nstar'],
+                all_results[k_lime]['summary']['nstar'],
                 prefix,
             ))
 
@@ -512,7 +512,7 @@ def fig8_heatmap_configurations(all_results, save_path=None):
         for j, ck in enumerate(col_keys):
             key = f'{rk}_{ck}'
             if key in all_results:
-                matrix[i, j] = all_results[key]['summary']['mean_equivalence']
+                matrix[i, j] = all_results[key]['summary']['nstar']
 
     if np.all(np.isnan(matrix)):
         return

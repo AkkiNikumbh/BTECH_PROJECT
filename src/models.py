@@ -15,7 +15,7 @@ from sklearn.metrics import (
 from src.config import (
     SEED_MODEL_LOGREG, SEED_MODEL_RF,
     SEED_TRAIN_TEST_SPLIT, TEST_SIZE,
-    N_ESTIMATORS_RF, MAX_DEPTH_RF
+    N_ESTIMATORS_RF, MAX_DEPTH_RF, CLASS_WEIGHT
 )
 
 
@@ -44,12 +44,14 @@ class DiabetesModel:
                 n_estimators=N_ESTIMATORS_RF,
                 max_depth=MAX_DEPTH_RF,
                 random_state=SEED_MODEL_RF,
+                class_weight=CLASS_WEIGHT,   # FIX 10: handle ~13% prevalence
                 n_jobs=-1
             )
         elif model_type == 'lr':
             self.scaler = StandardScaler()
             self.model = LogisticRegression(
                 random_state=SEED_MODEL_LOGREG,
+                class_weight=CLASS_WEIGHT,   # FIX 10: handle ~13% prevalence
                 max_iter=1000
             )
         else:
@@ -61,6 +63,12 @@ class DiabetesModel:
         if self.scaler:
             X_train = self.scaler.fit_transform(X_train)
         self.model.fit(X_train, y_train)
+        # Speed: train on all cores, but PREDICT on one. The attack makes
+        # ~100 single-row predictions per patient; with n_jobs=-1 each one
+        # starts a thread pool, which made the RF runs ~1 h each.
+        # Predictions are identical either way.
+        if hasattr(self.model, 'n_jobs'):
+            self.model.n_jobs = 1
 
     def predict_proba(self, X):
         """Get probability of diabetes (class 1)."""

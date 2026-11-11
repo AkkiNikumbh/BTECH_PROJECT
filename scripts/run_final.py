@@ -249,7 +249,8 @@ for input_type in ['reported', 'measured']:   # reported first (main hypothesis)
             ci = compute_confidence_intervals(
                 equivalences,
                 n_bootstrap=FINAL_CONFIG['bootstrap_n_iterations'],
-                confidence=FINAL_CONFIG['confidence_level']
+                confidence=FINAL_CONFIG['confidence_level'],
+                results=results, blind_attempts_list=BLIND_ATTEMPTS
             )
 
             run_data = {
@@ -309,11 +310,18 @@ for run_key, data in all_results.items():
         'Model':         model_type,
         'Explanation':   exp_method.upper(),
         'N_patients':    s['n_patients'],
-        'Mean_Nstar':    round(s['mean_equivalence'], 2),
-        'Median_Nstar':  round(s['median_equivalence'], 2),
-        'Std_Nstar':     round(s['std_equivalence'], 2),
-        'CI_low':        round(ci['mean_ci'][0], 2),
-        'CI_high':       round(ci['mean_ci'][1], 2),
+        # PRIMARY (pre-registered, mean curve) - FIX 4
+        'Nstar':         round(s['nstar'], 2),
+        'Nstar_CI_low':  round(ci['nstar_ci'][0], 2),
+        'Nstar_CI_high': round(ci['nstar_ci'][1], 2),
+        'Mean_exp_reduction': round(s['mean_explanation_reduction'], 4),
+        # SECONDARY (per-patient)
+        'PerPatient_Mean_Nstar':   round(s['mean_equivalence'], 2),
+        'PerPatient_Median_Nstar': round(s['median_equivalence'], 2),
+        'PerPatient_Std_Nstar':    round(s['std_equivalence'], 2),
+        'PerPatient_CI_low':  round(ci['mean_ci'][0], 2),
+        'PerPatient_CI_high': round(ci['mean_ci'][1], 2),
+        'Pct_censored':  round(s['pct_censored'], 1),
         'Pct_useless':   round(s['pct_explanation_useless'], 1),
         'Pct_worth_10p': round(s['pct_explanation_worth_10plus'], 1),
         'Wilcoxon_p':    round(st.get('wilcoxon_pval', 1.0), 6),
@@ -371,11 +379,14 @@ master = {
     },
     'results': {
         k: {
-            'mean_Nstar':    round(float(d['summary']['mean_equivalence']), 3),
-            'median_Nstar':  round(float(d['summary']['median_equivalence']), 3),
-            'std_Nstar':     round(float(d['summary']['std_equivalence']), 3),
-            'CI_95_low':     round(float(d['confidence_interval']['mean_ci'][0]), 3),
-            'CI_95_high':    round(float(d['confidence_interval']['mean_ci'][1]), 3),
+            'Nstar':         round(float(d['summary']['nstar']), 3),
+            'Nstar_CI_95_low':  round(float(d['confidence_interval']['nstar_ci'][0]), 3),
+            'Nstar_CI_95_high': round(float(d['confidence_interval']['nstar_ci'][1]), 3),
+            'per_patient_mean_Nstar':   round(float(d['summary']['mean_equivalence']), 3),
+            'per_patient_median_Nstar': round(float(d['summary']['median_equivalence']), 3),
+            'per_patient_std_Nstar':    round(float(d['summary']['std_equivalence']), 3),
+            'per_patient_CI_95_low':    round(float(d['confidence_interval']['mean_ci'][0]), 3),
+            'per_patient_CI_95_high':   round(float(d['confidence_interval']['mean_ci'][1]), 3),
             'pct_useless':   round(float(d['summary']['pct_explanation_useless']), 1),
             'pct_worth_10p': round(float(d['summary']['pct_explanation_worth_10plus']), 1),
             'wilcoxon_p':    round(float(stat_results.get(k, {}).get('wilcoxon_pval', 1.0)), 6),

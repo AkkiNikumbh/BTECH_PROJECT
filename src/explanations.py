@@ -6,6 +6,8 @@ import numpy as np
 import shap
 import lime
 import lime.lime_tabular
+from src.config import (LIME_N_FEATURES, SHAP_BACKGROUND_N,
+                        SEED_SHAP_BACKGROUND)
 
 
 class ExplanationGenerator:
@@ -30,10 +32,14 @@ class ExplanationGenerator:
         if model.model_type == 'rf':
             self.shap_explainer = shap.TreeExplainer(model.model)
         elif model.model_type == 'lr':
+            # FIX 11: seeded RANDOM background sample (was X_train[:100],
+            # i.e. whatever rows happened to come first)
+            n_bg = min(SHAP_BACKGROUND_N, len(X_train))
+            bg_idx = np.random.RandomState(SEED_SHAP_BACKGROUND).choice(
+                len(X_train), size=n_bg, replace=False)
+            X_bg = X_train[bg_idx]
             if model.scaler:
-                X_bg = model.scaler.transform(X_train[:100])
-            else:
-                X_bg = X_train[:100]
+                X_bg = model.scaler.transform(X_bg)
             self.shap_explainer = shap.LinearExplainer(model.model, X_bg)
 
         # Initialize LIME explainer
@@ -101,18 +107,32 @@ class ExplanationGenerator:
         ))
         return attributions
 
-    def get_lime_explanation(self, x_single, num_features=5):
+    def get_lime_explanation(self, x_single, num_features=None, seed=None):
         """
         Get LIME explanation for a single instance.
 
+        num_features : None -> ALL features (FIX 9: with the old value of 5
+                       of 7, height/weight could be cut off, and the attack
+                       then did nothing).
+        seed         : if given, LIME's random sampling is re-seeded for this
+                       patient (FIX 8), so the explanation for a patient does
+                       not depend on which patients were explained before.
+
         Returns
         -------
-        dict: {feature_name: weight} from LIME
+        dict: {feature_condition: weight} from LIME
         """
-        predict_fn = lambda X: np.column_stack([
-            1 - self.model.predict_proba(X),
-            self.model.predict_proba(X)
-        ])
+        if num_features is None:
+            num_features = LIME_N_FEATURES or len(self.feature_names)
+
+        if seed is not None:
+            rs = np.random.RandomState(seed)
+            self.lime_explainer.random_state = rs
+            self.lime_explainer.base.random_state = rs
+
+        def predict_fn(X):
+            p = self.model.predict_proba(X)
+            return np.column_stack([1 - p, p])
 
         exp = self.lime_explainer.explain_instance(
             x_single,
@@ -124,7 +144,7 @@ class ExplanationGenerator:
         return dict(exp.as_list())
 
     def get_top_gameable_feature(self, attributions, gameable_features,
-                                 x_single=None):
+                                 x_single=None, allowed_directions=None):
         """
         Find the most influential feature that the adversary CAN change,
         and the direction that should LOWER the risk score.
@@ -151,18 +171,29 @@ class ExplanationGenerator:
         gameable_features : list of exact feature names that can be changed
         x_single : np.array, the patient's feature vector (needed for LIME
                    range bins, to pick the nearer edge to leave the bin)
+        allowed_directions : optional {feature: [allowed directions]}. A
+                   feature whose risk-lowering direction is not allowed (e.g.
+                   an unrealistic lie, FIX 7) is skipped.
 
         Returns
         -------
         (feature_name, attribution_value, direction) where direction is
         -1 (decrease) or +1 (increase); or (None, None, 0) if nothing usable.
         """
+        def pick(feat, candidates):
+            ok = (allowed_directions or {}).get(feat, [-1, 1])
+            for d in candidates:
+                if d in ok:
+                    return d
+            return 0
+
         for attr_key, val in attributions.items():
             key = str(attr_key)
             # Direct match (SHAP exact names)
             if key in gameable_features:
                 val = float(val)
-                direction = -1 if val > 0 else (1 if val < 0 else 0)
+                candidates = [-1] if val > 0 else ([1] if val < 0 else [])
+                direction = pick(key, candidates)
                 if direction != 0:
                     return key, val, direction
                 continue
@@ -172,7 +203,7 @@ class ExplanationGenerator:
                     x_value = None
                     if x_single is not None and feat in self.feature_names:
                         x_value = float(x_single[self.feature_names.index(feat)])
-                    direction = lime_direction(key, feat, float(val), x_value)
+                    direction = pick(feat, lime_directions(key, feat, float(val), x_value))
                     if direction != 0:
                         return feat, float(val), direction
                     break
@@ -186,6 +217,12 @@ _NUM = r'([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)'
 
 
 def lime_direction(condition, feature, weight, x_value=None):
+    """Preferred risk-lowering direction (-1/+1), or 0. See lime_directions."""
+    dirs = lime_directions(condition, feature, weight, x_value)
+    return dirs[0] if dirs else 0
+
+
+def lime_directions(condition, feature, weight, x_value=None):
     """
     Turn one LIME (condition, weight) pair into the direction to change
     `feature` so the risk score goes DOWN.
@@ -197,11 +234,13 @@ def lime_direction(condition, feature, weight, x_value=None):
                             (needs x_value; -1 if nearer a, +1 if nearer b);
                             weight<0 -> 0 (the explanation says the patient is
                             already in a protective bin: no direction given)
-    Returns -1, +1, or 0 when no usable direction can be read.
+    Returns the list of directions that leave a risk-raising bin / move
+    further into a protective one, PREFERRED FIRST (for range bins both
+    edges leave the bin: nearer edge first). Empty list = no direction.
     """
     import re
     if weight == 0:
-        return 0
+        return []
     f = re.escape(feature)
     cond = condition.strip()
 
@@ -209,19 +248,19 @@ def lime_direction(condition, feature, weight, x_value=None):
     m = re.fullmatch(_NUM + r'\s*<=?\s*' + f + r'\s*<=?\s*' + _NUM, cond)
     if m:
         if weight < 0:
-            return 0
+            return []
         lo, hi = float(m.group(1)), float(m.group(2))
         if x_value is None:
-            return 0
-        return -1 if (x_value - lo) <= (hi - x_value) else 1
+            return [-1, 1]
+        return [-1, 1] if (x_value - lo) <= (hi - x_value) else [1, -1]
 
     # One-sided bin: f > a, f >= a, f < a, f <= a
     m = re.fullmatch(f + r'\s*(>=|>|<=|<)\s*' + _NUM, cond)
     if m:
         op = m.group(1)
         if op.startswith('>'):          # in the HIGH bin
-            return -1 if weight > 0 else 1
+            return [-1] if weight > 0 else [1]
         else:                           # in the LOW bin
-            return 1 if weight > 0 else -1
+            return [1] if weight > 0 else [-1]
 
-    return 0
+    return []

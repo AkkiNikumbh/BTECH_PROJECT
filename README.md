@@ -17,6 +17,13 @@
 > (2) the LIME-guided attack sometimes moved in the wrong direction,
 > (3) valid self-reported heights/weights were deleted as "refused" codes,
 > (5) the final run used the 2017–18 lie budget instead of the pre-registered 2015–16 one.
+>
+> **v3** also fixes the remaining implementation issues:
+> (4) the headline N\* is now computed as pre-registered (from the mean curve),
+> (6) both attackers use the same lie-size rule, (7) only realistic lies (height ↑, weight ↓),
+> (8) per-patient random seeds, (9) LIME shows all features, (10) balanced class weights,
+> (11) a random SHAP background. Some of these deviate from the pre-registered plan;
+> they are listed in the deviations table in the details file.
 > Details: [`docs/fixes_v2.md`](docs/fixes_v2.md).
 >
 > ⚠️ **The results, figures and tables below are still the OLD outputs from the baseline code.**
@@ -101,8 +108,8 @@ BTP/
 ### 1. Clone and install dependencies
 
 ```bash
-git clone https://github.com/Akshat-stack47/BTP-XAI-Gaming.git
-cd BTP-XAI-Gaming
+git clone https://github.com/AkkiNikumbh/BTECH_PROJECT.git
+cd BTECH_PROJECT
 pip install numpy pandas scikit-learn shap lime scipy matplotlib seaborn tqdm pytest
 ```
 

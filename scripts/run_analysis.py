@@ -78,9 +78,9 @@ for key in configs_8:
         with open(cache_path, 'rb') as f:
             all_results[key] = pickle.load(f)
         s = all_results[key]['summary']
-        print(f"    {key:30s} — N*={s['mean_equivalence']:.1f} "
-              f"[{all_results[key]['confidence_interval']['mean_ci'][0]:.1f}, "
-              f"{all_results[key]['confidence_interval']['mean_ci'][1]:.1f}]")
+        print(f"    {key:30s} — N*={s['nstar']:.1f} "
+              f"[{all_results[key]['confidence_interval']['nstar_ci'][0]:.1f}, "
+              f"{all_results[key]['confidence_interval']['nstar_ci'][1]:.1f}]")
     else:
         print(f"    {key:30s} — MISSING (not yet computed)")
 
@@ -331,10 +331,10 @@ for key in configs_8:
         'Model':          mdl,
         'Expl.':          exp_m,
         'N patients':     s['n_patients'],
-        'Mean N*':        round(s['mean_equivalence'], 2),
-        '95% CI':         f"[{ci['mean_ci'][0]:.2f}, {ci['mean_ci'][1]:.2f}]",
-        'Median N*':      round(s['median_equivalence'], 2),
-        'Std':            round(s['std_equivalence'], 2),
+        'N*':             round(s['nstar'], 2),
+        '95% CI':         f"[{ci['nstar_ci'][0]:.2f}, {ci['nstar_ci'][1]:.2f}]",
+        'Per-patient mean N*':   round(s['mean_equivalence'], 2),
+        'Per-patient median N*': round(s['median_equivalence'], 2),
         '% Useless':      f"{s['pct_explanation_useless']:.1f}%",
         '% Worth 10+':    f"{s['pct_explanation_worth_10plus']:.1f}%",
     })
@@ -370,8 +370,8 @@ for suffix in ['rf_shap', 'rf_lime', 'lr_shap', 'lr_lime']:
     m_key = f'measured_{suffix}'
     r_key = f'reported_{suffix}'
     if m_key in all_results and r_key in all_results:
-        m_n = all_results[m_key]['summary']['mean_equivalence']
-        r_n = all_results[r_key]['summary']['mean_equivalence']
+        m_n = all_results[m_key]['summary']['nstar']
+        r_n = all_results[r_key]['summary']['nstar']
         rows6.append({
             'Config':                suffix.upper().replace('_', '+'),
             'Model A (Measured) N*': round(m_n, 2),
@@ -400,12 +400,13 @@ if main_key in all_results:
     ci = all_results[main_key]['confidence_interval']
     n  = s['n_patients']
 
-    mean_n = s['mean_equivalence']
+    nstar  = s['nstar']                 # PRIMARY, pre-registered (FIX 4)
+    mean_n = s['mean_equivalence']      # secondary, per-patient
     med_n  = s['median_equivalence']
 
-    if mean_n < 5:
+    if nstar < 5:
         verdict = "LOW THREAT — Explanations offer minimal advantage. Transparency is SAFE."
-    elif mean_n <= 20:
+    elif nstar <= 20:
         verdict = "MODERATE THREAT — Explanations offer some advantage. Caution RECOMMENDED."
     else:
         verdict = "HIGH THREAT — Explanations are powerful attack vectors. Countermeasures WARRANTED."
@@ -415,9 +416,10 @@ if main_key in all_results:
   MAIN FINDING (reported_rf_shap, N={n} patients)
 ======================================================================
 
-  1 SHAP explanation ≈ {mean_n:.1f} blind attempts (mean)
-  1 SHAP explanation ≈ {med_n:.1f} blind attempts (median)
-  95% CI (mean): [{ci['mean_ci'][0]:.2f}, {ci['mean_ci'][1]:.2f}]
+  PRIMARY (pre-registered): 1 SHAP explanation ≈ {nstar:.1f} blind attempts
+  95% CI: [{ci['nstar_ci'][0]:.2f}, {ci['nstar_ci'][1]:.2f}]
+
+  Secondary, per patient: mean N* = {mean_n:.1f}, median N* = {med_n:.1f}
 
   {s['pct_explanation_useless']:.0f}% of patients: explanation provides ZERO benefit
   {s['pct_explanation_worth_10plus']:.0f}% of patients: explanation worth 10+ blind attempts
@@ -437,8 +439,9 @@ if main_key in all_results:
             if key not in all_results:
                 continue
             ks = all_results[key]['summary']
-            f.write(f"  {key:30s}  N*={ks['mean_equivalence']:.2f}  "
-                    f"(median={ks['median_equivalence']:.2f})\n")
+            f.write(f"  {key:30s}  N*={ks['nstar']:.2f}  "
+                    f"(per-patient mean={ks['mean_equivalence']:.2f}, "
+                    f"median={ks['median_equivalence']:.2f})\n")
     print(f"  Narrative saved: {narr_path}")
 
 # ============================================================

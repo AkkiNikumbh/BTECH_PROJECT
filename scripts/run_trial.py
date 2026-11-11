@@ -85,7 +85,8 @@ for input_type, X, fn, gameable in [
                 explanation_method=exp_method
             )
             equivalences, summary = compute_equivalence(results, N_BLIND_ATTEMPTS)
-            ci = compute_confidence_intervals(equivalences)
+            ci = compute_confidence_intervals(equivalences, results=results,
+                                              blind_attempts_list=N_BLIND_ATTEMPTS)
 
             all_results[run_key] = {
                 'results'            : results,
@@ -125,10 +126,11 @@ for run_key, d in all_results.items():
         'Input'          : parts[0],
         'Model'          : parts[1].upper(),
         'Explanation'    : parts[2].upper(),
-        'Mean N*'        : round(s['mean_equivalence'], 2),
-        'Median N*'      : round(s['median_equivalence'], 2),
-        'CI_mean_lo'     : round(ci['mean_ci'][0], 2),
-        'CI_mean_hi'     : round(ci['mean_ci'][1], 2),
+        'N*'             : round(s['nstar'], 2),          # primary (pre-registered)
+        'N* CI lo'       : round(ci['nstar_ci'][0], 2),
+        'N* CI hi'       : round(ci['nstar_ci'][1], 2),
+        'Per-patient mean N*'  : round(s['mean_equivalence'], 2),
+        'Per-patient median N*': round(s['median_equivalence'], 2),
         '% useless'      : round(s['pct_explanation_useless'], 1),
         '% worth 10+'    : round(s['pct_explanation_worth_10plus'], 1),
         'N patients'     : s['n_patients'],

@@ -126,14 +126,14 @@ for key, data in all_results_loaded.items():
     ci = data['confidence_interval']
     n  = s['n_patients']
     check(f"{key}: N patients >= 100",   n >= 100, str(n))
-    check(f"{key}: N* non-negative",     s['mean_equivalence'] >= 0,
-          f"{s['mean_equivalence']:.2f}")
+    check(f"{key}: N* non-negative",     s['nstar'] >= 0,
+          f"{s['nstar']:.2f}")
     check(f"{key}: CI lower <= mean",
-          ci['mean_ci'][0] <= s['mean_equivalence'],
-          f"{ci['mean_ci'][0]:.2f} <= {s['mean_equivalence']:.2f}")
+          ci['nstar_ci'][0] <= s['nstar'],
+          f"{ci['nstar_ci'][0]:.2f} <= {s['nstar']:.2f}")
     check(f"{key}: mean <= CI upper",
-          s['mean_equivalence'] <= ci['mean_ci'][1],
-          f"{s['mean_equivalence']:.2f} <= {ci['mean_ci'][1]:.2f}")
+          s['nstar'] <= ci['nstar_ci'][1],
+          f"{s['nstar']:.2f} <= {ci['nstar_ci'][1]:.2f}")
     check(f"{key}: pct_useless in [0,100]",
           0 <= s['pct_explanation_useless'] <= 100,
           f"{s['pct_explanation_useless']:.1f}%")
