@@ -26,8 +26,8 @@
 > they are listed in the deviations table in the details file.
 > Details: [`docs/fixes_v2.md`](docs/fixes_v2.md).
 >
-> ⚠️ **The results, figures and tables below are still the OLD outputs from the baseline code.**
-> Re-run the pipeline to regenerate them with the fixes.
+> ✅ **The results, figures and tables in `results/` were regenerated with the v3 code**
+> on the real NHANES data (2015–16 trial, 2017–18 held-out final run).
 
 ---
 
@@ -43,24 +43,27 @@ We introduce the **Explanation Equivalence metric N\***: the number of blind tri
 
 ## 🔬 Key Result
 
-Tested on **NHANES 2017–2018 held-out data (N = 884 patients)**:
+Tested on **NHANES 2017–2018 held-out data (N = 887 test patients)**, v3 code:
 
-| Configuration | N* (mean) | 95% CI | % Explanation Useless |
-|---|---|---|---|
-| **RF + SHAP, Reported ★** | **12.43** | **[10.54, 14.53]** | **63.8%** |
-| RF + LIME, Reported | 9.41 | [7.66, 11.27] | 67.9% |
-| LR + SHAP, Reported | 22.77 | [20.36, 25.28] | 59.0% |
-| LR + LIME, Reported | 22.71 | [20.28, 25.26] | 55.1% |
-| RF + SHAP, Measured | 10.27 | [8.42, 12.15] | 69.2% |
-| RF + LIME, Measured | 9.01 | [7.32, 10.77] | 69.8% |
-| LR + SHAP, Measured | 23.05 | [20.58, 25.61] | 57.1% |
-| LR + LIME, Measured | 21.27 | [18.99, 23.71] | 56.7% |
+| Configuration | **N\*** (primary, pre-registered) | 95% CI | Per-patient mean N\* | % Explanation Useless |
+|---|---|---|---|---|
+| **RF + SHAP, Reported ★** | **0.0** | **[0.0, 0.0]** | 7.69 | **76.0%** |
+| RF + LIME, Reported | 0.0 | [0.0, 0.0] | 7.07 | 73.8% |
+| LR + SHAP, Reported | 0.0 | [0.0, 0.0] | 2.58 | 66.4% |
+| LR + LIME, Reported | 0.0 | [0.0, 0.0] | 2.99 | 56.3% |
+| RF + SHAP, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
+| RF + LIME, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
+| LR + SHAP, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
+| LR + LIME, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
 
-★ Primary pre-registered configuration
+★ Primary pre-registered configuration. Full table: [`results/tables/final_results.csv`](results/tables/final_results.csv).
 
-> **Verdict: MODERATE THREAT** (5 ≤ N* ≤ 20)
-> For 63.8% of patients, the explanation provides **zero advantage** over a single random guess.
-> **Policy implication: Verify inputs rather than withhold explanations.**
+> **Verdict: LOW THREAT** (N\* < 5)
+> On average, one explanation-guided lie lowers the risk score **less** than one random realistic lie
+> (RF+SHAP: 0.013 vs 0.024). The explanation leads the patient not to lie (3–31% of patients), or, for the
+> random forest, to a lie that **raises** their risk (23–31%).
+> Model A (nurse-measured inputs) cannot be gamed at all; Model B can be lowered by ~0.06 with 10 blind attempts.
+> **Policy implication: verify self-reported inputs rather than withhold explanations.**
 
 ---
 
