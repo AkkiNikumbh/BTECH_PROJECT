@@ -1,0 +1,9 @@
+Config,Input,Model,Explanation,N*,N* CI lo,N* CI hi,Per-patient mean N*,Per-patient median N*,% useless,% worth 10+,N patients
+reported_rf_shap,reported,RF,SHAP,0.0,0.0,0.0,5.16,0.0,81.5,6.0,200
+reported_rf_lime,reported,RF,LIME,0.0,0.0,1.11,8.17,0.0,67.5,10.5,200
+reported_lr_shap,reported,LR,SHAP,0.0,0.0,0.0,1.71,0.0,66.0,4.0,200
+reported_lr_lime,reported,LR,LIME,1.01,0.0,1.35,4.46,0.0,53.0,9.5,200
+measured_rf_shap,measured,RF,SHAP,0.0,0.0,0.0,0.0,0.0,100.0,0.0,200
+measured_rf_lime,measured,RF,LIME,0.0,0.0,0.0,0.0,0.0,100.0,0.0,200
+measured_lr_shap,measured,LR,SHAP,0.0,0.0,0.0,0.0,0.0,100.0,0.0,200
+measured_lr_lime,measured,LR,LIME,0.0,0.0,0.0,0.0,0.0,100.0,0.0,200

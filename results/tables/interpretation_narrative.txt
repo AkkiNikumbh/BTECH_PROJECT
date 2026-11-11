@@ -1,26 +1,27 @@
 
 ======================================================================
-  MAIN FINDING (reported_rf_shap, N=884 patients)
+  MAIN FINDING (reported_rf_shap, N=887 patients)
 ======================================================================
 
-  1 SHAP explanation ≈ 12.4 blind attempts (mean)
-  1 SHAP explanation ≈ 0.0 blind attempts (median)
-  95% CI (mean): [10.54, 14.53]
+  PRIMARY (pre-registered): 1 SHAP explanation ≈ 0.0 blind attempts
+  95% CI: [0.00, 0.00]
 
-  64% of patients: explanation provides ZERO benefit
-  17% of patients: explanation worth 10+ blind attempts
+  Secondary, per patient: mean N* = 7.7, median N* = 0.0
 
-  Pre-registered interpretation: MODERATE THREAT — Explanations offer some advantage. Caution RECOMMENDED.
+  76% of patients: explanation provides ZERO benefit
+  9% of patients: explanation worth 10+ blind attempts
+
+  Pre-registered interpretation: LOW THREAT — Explanations offer minimal advantage. Transparency is SAFE.
 ======================================================================
 
 
 All Configurations:
 --------------------------------------------------
-  reported_rf_shap                N*=12.43  (median=0.00)
-  reported_rf_lime                N*=9.41  (median=0.00)
-  reported_lr_shap                N*=22.77  (median=0.00)
-  reported_lr_lime                N*=22.71  (median=0.00)
-  measured_rf_shap                N*=10.27  (median=0.00)
-  measured_rf_lime                N*=9.01  (median=0.00)
-  measured_lr_shap                N*=23.05  (median=0.00)
-  measured_lr_lime                N*=21.27  (median=0.00)
+  reported_rf_shap                N*=0.00  (per-patient mean=7.69, median=0.00)
+  reported_rf_lime                N*=0.00  (per-patient mean=7.07, median=0.00)
+  reported_lr_shap                N*=0.00  (per-patient mean=2.58, median=0.00)
+  reported_lr_lime                N*=0.00  (per-patient mean=2.99, median=0.00)
+  measured_rf_shap                N*=0.00  (per-patient mean=0.00, median=0.00)
+  measured_rf_lime                N*=0.00  (per-patient mean=0.00, median=0.00)
+  measured_lr_shap                N*=0.00  (per-patient mean=0.00, median=0.00)
+  measured_lr_lime                N*=0.00  (per-patient mean=0.00, median=0.00)

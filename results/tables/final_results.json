@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "experiment": "GP-109 Final Experiment",
+    "date": "2026-11-11 23:54",
+    "git_tag": "v0.1-preregistration",
+    "cycle": "2017_2018",
+    "n_patients_total": 4431,
+    "diabetes_prevalence_pct": 13.59,
+    "lie_budget_used": {
+      "height": {
+        "max_lie": 7.28,
+        "mean_direction": "positive",
+        "mean_magnitude": 2.658
+      },
+      "weight": {
+        "max_lie": 8.961,
+        "mean_direction": "negative",
+        "mean_magnitude": 2.85
+      }
+    },
+    "lie_budget_observed_2017_2018": {
+      "height": {
+        "max_lie": 6.88,
+        "mean_direction": "positive",
+        "mean_magnitude": 2.619
+      },
+      "weight": {
+        "max_lie": 9.322,
+        "mean_direction": "negative",
+        "mean_magnitude": 2.881
+      }
+    },
+    "gap_comparison": {
+      "height": {
+        "dev_2015_2016": 7.28,
+        "holdout_2017_2018": 6.88,
+        "absolute_difference": 0.4,
+        "pct_change": -5.5
+      },
+      "weight": {
+        "dev_2015_2016": 8.961,
+        "holdout_2017_2018": 9.322,
+        "absolute_difference": 0.361,
+        "pct_change": 4.0
+      }
+    },
+    "total_runtime_hours": 0.5
+  },
+  "results": {
+    "reported_rf_shap": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 7.691,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 25.584,
+      "per_patient_CI_95_low": 6.122,
+      "per_patient_CI_95_high": 9.379,
+      "pct_useless": 76.0,
+      "pct_worth_10p": 8.7,
+      "wilcoxon_p": 1.0,
+      "cohens_d": -0.801,
+      "significant": false
+    },
+    "reported_rf_lime": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 7.073,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 24.383,
+      "per_patient_CI_95_low": 5.563,
+      "per_patient_CI_95_high": 8.66,
+      "pct_useless": 73.8,
+      "pct_worth_10p": 8.1,
+      "wilcoxon_p": 1.0,
+      "cohens_d": -0.789,
+      "significant": false
+    },
+    "reported_lr_shap": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 2.582,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 9.257,
+      "per_patient_CI_95_low": 2.027,
+      "per_patient_CI_95_high": 3.182,
+      "pct_useless": 66.4,
+      "pct_worth_10p": 5.4,
+      "wilcoxon_p": 1.0,
+      "cohens_d": -1.336,
+      "significant": false
+    },
+    "reported_lr_lime": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 2.987,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 9.855,
+      "per_patient_CI_95_low": 2.416,
+      "per_patient_CI_95_high": 3.638,
+      "pct_useless": 56.3,
+      "pct_worth_10p": 6.1,
+      "wilcoxon_p": 1.0,
+      "cohens_d": -1.238,
+      "significant": false
+    },
+    "measured_rf_shap": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 0.0,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 0.0,
+      "per_patient_CI_95_low": 0.0,
+      "per_patient_CI_95_high": 0.0,
+      "pct_useless": 100.0,
+      "pct_worth_10p": 0.0,
+      "wilcoxon_p": 1.0,
+      "cohens_d": 0.0,
+      "significant": false
+    },
+    "measured_rf_lime": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 0.0,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 0.0,
+      "per_patient_CI_95_low": 0.0,
+      "per_patient_CI_95_high": 0.0,
+      "pct_useless": 100.0,
+      "pct_worth_10p": 0.0,
+      "wilcoxon_p": 1.0,
+      "cohens_d": 0.0,
+      "significant": false
+    },
+    "measured_lr_shap": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 0.0,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 0.0,
+      "per_patient_CI_95_low": 0.0,
+      "per_patient_CI_95_high": 0.0,
+      "pct_useless": 100.0,
+      "pct_worth_10p": 0.0,
+      "wilcoxon_p": 1.0,
+      "cohens_d": 0.0,
+      "significant": false
+    },
+    "measured_lr_lime": {
+      "Nstar": 0.0,
+      "Nstar_CI_95_low": 0.0,
+      "Nstar_CI_95_high": 0.0,
+      "per_patient_mean_Nstar": 0.0,
+      "per_patient_median_Nstar": 0.0,
+      "per_patient_std_Nstar": 0.0,
+      "per_patient_CI_95_low": 0.0,
+      "per_patient_CI_95_high": 0.0,
+      "pct_useless": 100.0,
+      "pct_worth_10p": 0.0,
+      "wilcoxon_p": 1.0,
+      "cohens_d": 0.0,
+      "significant": false
+    }
+  },
+  "interpretation": {
+    "threshold_low": 5,
+    "threshold_high": 20,
+    "conclusion": "TBD \u2014 filled during Stage 8 analysis"
+  }
+}
