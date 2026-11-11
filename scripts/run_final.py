@@ -189,7 +189,7 @@ models, split = train_all_models(X_meas, X_rep, y, fn_meas, fn_rep)
 # Save model training metrics
 model_metrics = {k: m.metrics for k, m in models.items()}
 metrics_path = os.path.join(RESULTS_TABLES, 'final_model_metrics.json')
-with open(metrics_path, 'w') as f:
+with open(metrics_path, 'w', encoding='utf-8') as f:
     json.dump(model_metrics, f, indent=2)
 print(f"\n  Model metrics saved: {metrics_path}")
 
@@ -392,7 +392,7 @@ master = {
 }
 
 json_path = os.path.join(RESULTS_TABLES, 'final_results.json')
-with open(json_path, 'w') as f:
+with open(json_path, 'w', encoding='utf-8') as f:
     json.dump(master, f, indent=2)
 
 print(f"\n  Results CSV:  {csv_path}")

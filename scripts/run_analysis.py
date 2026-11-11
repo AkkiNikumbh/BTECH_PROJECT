@@ -248,7 +248,7 @@ def save_table(df, name, caption, label):
     csv_path = os.path.join(RESULTS_TABLES, f'{name}.csv')
     tex_path = os.path.join(RESULTS_TABLES, f'{name}.tex')
     df.to_csv(csv_path, index=False)
-    with open(tex_path, 'w') as f:
+    with open(tex_path, 'w', encoding='utf-8') as f:
         f.write(df_to_latex(df, caption, label))
     print(f"  Saved: {csv_path}  +  {tex_path}")
 
