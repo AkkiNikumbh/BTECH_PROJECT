@@ -61,7 +61,8 @@ print(f"\n  Holdout data: {len(holdout_data['y']):,} total patients")
 print(f"  Diabetes prevalence: {holdout_data['y'].mean()*100:.1f}%")
 
 # Load per-config cached results
-cache_dir = os.path.join(DATA_PROCESSED, 'final_run_cache')
+from src.config import FINAL_RUN_CACHE
+cache_dir = FINAL_RUN_CACHE   # v2: same folder run_final.py writes to
 all_results = {}
 configs_8 = [
     'reported_rf_shap', 'reported_rf_lime',

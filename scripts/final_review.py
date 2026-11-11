@@ -180,7 +180,8 @@ section("5. FINAL EXPERIMENT RESULTS")
 import pandas as pd
 
 # Cache check
-cache_dir = 'data/processed/final_run_cache'
+from src.config import FINAL_RUN_CACHE
+cache_dir = FINAL_RUN_CACHE
 if os.path.exists(cache_dir):
     cached = [f.replace('.pkl','') for f in os.listdir(cache_dir) if f.endswith('.pkl')]
     chk("All 8 config caches saved", len(cached) >= 8, f"{len(cached)}/8: {cached[:3]}...")

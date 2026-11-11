@@ -50,7 +50,8 @@ os.makedirs(RESULTS_TABLES, exist_ok=True)
 
 # New cache dir for the fixed code: the old 'final_run_cache' holds results
 # from the buggy version and must NOT be silently re-loaded on resume.
-RESUME_DIR = os.path.join(DATA_PROCESSED, 'final_run_cache_v2_fixed')
+from src.config import FINAL_RUN_CACHE
+RESUME_DIR = FINAL_RUN_CACHE
 os.makedirs(RESUME_DIR, exist_ok=True)
 
 BLIND_ATTEMPTS = FINAL_CONFIG['blind_attempts']

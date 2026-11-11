@@ -6,8 +6,18 @@ Explanations Help Someone Cheat a Clinical Risk Model.
 All random seeds are fixed here for reproducibility.
 """
 import os
+import sys
 import random
 import numpy as np
+
+# The scripts print symbols like ≈ ✅ ❌ →. A default Windows console
+# (cp1252) cannot encode them and Python crashes with UnicodeEncodeError.
+# Switch stdout/stderr to UTF-8 so the scripts run in any terminal.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except (AttributeError, ValueError):
+        pass
 
 # ============================================================
 # RANDOM SEEDS — Fixed for reproducibility
@@ -34,6 +44,9 @@ DATA_PROCESSED = os.path.join(PROJECT_ROOT, 'data', 'processed')
 DATA_RESULTS = os.path.join(PROJECT_ROOT, 'data', 'results')
 RESULTS_FIGURES = os.path.join(PROJECT_ROOT, 'results', 'figures')
 RESULTS_TABLES = os.path.join(PROJECT_ROOT, 'results', 'tables')
+# Per-config results of run_final.py. v2: new folder so results from the
+# old (buggy) code in 'final_run_cache' are never re-loaded by mistake.
+FINAL_RUN_CACHE = os.path.join(DATA_PROCESSED, 'final_run_cache_v2_fixed')
 
 # ============================================================
 # MODEL PARAMETERS

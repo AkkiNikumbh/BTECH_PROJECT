@@ -134,7 +134,7 @@ except Exception as e:
 print("\n  [F] Output Directories")
 from src.config import RESULTS_FIGURES, RESULTS_TABLES, DATA_PROCESSED
 dirs = [RESULTS_FIGURES, RESULTS_TABLES,
-        os.path.join(DATA_PROCESSED, 'final_run_cache')]
+        __import__('src.config', fromlist=['FINAL_RUN_CACHE']).FINAL_RUN_CACHE]
 for d in dirs:
     os.makedirs(d, exist_ok=True)
     check(f"{os.path.relpath(d)} ready", os.path.exists(d))

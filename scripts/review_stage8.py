@@ -106,7 +106,8 @@ else:
 # ----------------------------------------------------------------
 print("\n  [E] Main Result Sanity Checks")
 import pickle
-cache_dir = os.path.join(DATA_PROCESSED, 'final_run_cache')
+from src.config import FINAL_RUN_CACHE
+cache_dir = FINAL_RUN_CACHE
 all_results_loaded = {}
 for key in ['reported_rf_shap','reported_rf_lime','reported_lr_shap','reported_lr_lime',
             'measured_rf_shap','measured_rf_lime','measured_lr_shap','measured_lr_lime']:
