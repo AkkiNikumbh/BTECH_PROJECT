@@ -1,6 +1,6 @@
 \begin{table*}[htbp]
   \centering
-  \caption{Model A (Measured) vs Model B (Self-Reported): Vulnerability Comparison}
+  \caption{Model A (Measured) vs Model B (Self-Reported): Vulnerability. Model A has no input the patient can change, so its zeros are true by design, not an experimental finding (see Table 6b).}
   \label{tab:model_ab}
   \small
   \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
@@ -8,9 +8,9 @@
     \toprule
     Config & Model A $N^*$ & Model B $N^*$ & A: reduction, 10 blind & B: reduction, 1 explanation & B: reduction, 10 blind & B can be gamed \\
     \midrule
-    RF+SHAP & 0.0 & 0.0 & 0.0 & 0.0129 & 0.0638 & Yes \\
-    RF+LIME & 0.0 & 0.0 & 0.0 & 0.0117 & 0.0638 & Yes \\
-    LR+SHAP & 0.0 & 0.0 & 0.0 & 0.0176 & 0.0457 & Yes \\
+    RF+SHAP & 0.0 & 0.0 & 0.0 & 0.0233 & 0.0638 & Yes \\
+    RF+LIME & 0.0 & 0.0 & 0.0 & 0.0181 & 0.0638 & Yes \\
+    LR+SHAP & 0.0 & 0.0 & 0.0 & 0.0242 & 0.0457 & Yes \\
     LR+LIME & 0.0 & 0.0 & 0.0 & 0.0223 & 0.0457 & Yes \\
     \bottomrule
   \end{tabular}%

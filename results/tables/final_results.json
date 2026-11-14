@@ -1,7 +1,7 @@
 {
   "meta": {
     "experiment": "GP-109 Final Experiment",
-    "date": "2026-11-11 23:54",
+    "date": "2026-11-14 21:20",
     "git_tag": "v0.1-preregistration",
     "cycle": "2017_2018",
     "n_patients_total": 4431,
@@ -44,22 +44,22 @@
         "pct_change": 4.0
       }
     },
-    "total_runtime_hours": 0.5
+    "total_runtime_hours": 0.0
   },
   "results": {
     "reported_rf_shap": {
       "Nstar": 0.0,
       "Nstar_CI_95_low": 0.0,
-      "Nstar_CI_95_high": 0.0,
-      "per_patient_mean_Nstar": 7.691,
+      "Nstar_CI_95_high": 1.216,
+      "per_patient_mean_Nstar": 7.8,
       "per_patient_median_Nstar": 0.0,
-      "per_patient_std_Nstar": 25.584,
-      "per_patient_CI_95_low": 6.122,
-      "per_patient_CI_95_high": 9.379,
-      "pct_useless": 76.0,
-      "pct_worth_10p": 8.7,
+      "per_patient_std_Nstar": 25.177,
+      "per_patient_CI_95_low": 6.251,
+      "per_patient_CI_95_high": 9.502,
+      "pct_useless": 69.6,
+      "pct_worth_10p": 9.5,
       "wilcoxon_p": 1.0,
-      "cohens_d": -0.801,
+      "cohens_d": -0.659,
       "significant": false
     },
     "reported_rf_lime": {
@@ -74,22 +74,22 @@
       "pct_useless": 73.8,
       "pct_worth_10p": 8.1,
       "wilcoxon_p": 1.0,
-      "cohens_d": -0.789,
+      "cohens_d": -0.72,
       "significant": false
     },
     "reported_lr_shap": {
       "Nstar": 0.0,
       "Nstar_CI_95_low": 0.0,
-      "Nstar_CI_95_high": 0.0,
-      "per_patient_mean_Nstar": 2.582,
+      "Nstar_CI_95_high": 1.087,
+      "per_patient_mean_Nstar": 3.614,
       "per_patient_median_Nstar": 0.0,
-      "per_patient_std_Nstar": 9.257,
-      "per_patient_CI_95_low": 2.027,
-      "per_patient_CI_95_high": 3.182,
-      "pct_useless": 66.4,
-      "pct_worth_10p": 5.4,
+      "per_patient_std_Nstar": 11.853,
+      "per_patient_CI_95_low": 2.92,
+      "per_patient_CI_95_high": 4.389,
+      "pct_useless": 52.3,
+      "pct_worth_10p": 6.4,
       "wilcoxon_p": 1.0,
-      "cohens_d": -1.336,
+      "cohens_d": -1.196,
       "significant": false
     },
     "reported_lr_lime": {

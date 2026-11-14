@@ -79,6 +79,7 @@ BTP/
 │   ├── explanations.py     # SHAP + LIME generator
 │   ├── adversarial.py      # AdversarialSimulator (core experiment)
 │   ├── metrics.py          # N* computation + bootstrap CI + Wilcoxon
+│   ├── supporting_data.py  # UCI 45 / UCI 891 loaders, NHANES BMI lie budget
 │   └── visualization.py   # All 8 publication figures
 │
 ├── scripts/
@@ -86,6 +87,8 @@ BTP/
 │   ├── run_trial.py        # Stage 5: trial run on dev set
 │   ├── run_final.py        # Stage 7: final experiment on held-out data
 │   ├── run_analysis.py     # Stage 8: figures + tables
+│   ├── check_uci_heart.py  # P1: hand check on UCI Heart Disease (UCI 45)
+│   ├── run_uci_cdc_comparison.py  # comparison on CDC Diabetes (UCI 891)
 │   ├── demo.py             # Live viva demo (patient walkthrough)
 │   └── final_review.py     # 164-check project integrity script
 │
@@ -113,8 +116,12 @@ BTP/
 ```bash
 git clone https://github.com/AkkiNikumbh/BTECH_PROJECT.git
 cd BTECH_PROJECT
-pip install numpy pandas scikit-learn shap lime scipy matplotlib seaborn tqdm pytest
+pip install -r requirements-lock.txt   # exact versions used to produce results/
 ```
+
+The random-forest results depend on the scikit-learn version, so use the
+lock file to reproduce `results/` exactly (`requirements.txt` gives minimum
+versions only).
 
 ### 2. Download NHANES data
 
@@ -124,7 +131,15 @@ Download the following XPT files from [CDC NHANES](https://www.cdc.gov/nchs/nhan
 - Questionnaire: Blood Pressure & Cholesterol (BPQ), Physical Activity (PAQ), Smoking (SMQ)
 - Laboratory: Glycohemoglobin (GHB)
 
-Place in `data/raw/nhanes_2015_2016/` and `data/raw/nhanes_2017_2018/`.
+Place in `data/raw/nhanes_2015_2016/` and `data/raw/nhanes_2017_2018/`
+(or run `python scripts/download_nhanes.py`).
+
+Supporting datasets (research plan §6.4):
+- UCI Heart Disease (id 45): `heart+disease.zip` from
+  https://archive.ics.uci.edu/dataset/45/heart+disease →
+  `data/raw/uci_45_heart_disease/heart_disease.zip`
+- CDC Diabetes Health Indicators (id 891): https://archive.ics.uci.edu/static/public/891/data.csv →
+  `data/raw/uci_891_cdc_diabetes/data.csv`
 
 ### 3. Prepare data
 
@@ -144,13 +159,20 @@ python scripts/run_final.py
 python scripts/run_analysis.py
 ```
 
-### 6. Run the viva demo
+### 6. Supporting datasets
+
+```bash
+python scripts/check_uci_heart.py          # P1: hand-checkable test on UCI 45
+python scripts/run_uci_cdc_comparison.py   # comparison run on UCI 891 (~25 min)
+```
+
+### 7. Run the viva demo
 
 ```bash
 python scripts/demo.py --patient 42
 ```
 
-### 7. Run tests
+### 8. Run tests
 
 ```bash
 python -m pytest tests/ -v          # 40 unit tests
@@ -176,11 +198,20 @@ python scripts/final_review.py      # 164-check integrity
 
 ## 🔒 Pre-Registration
 
-This study was **pre-registered before any analysis of the held-out 2017–2018 data**.
+The analysis plan was **pre-registered before any analysis of the held-out 2017–2018 data**.
+
+> ⚠️ **Disclosure.** A first final run on the held-out data, with the code as
+> pre-registered, was made and seen before the fixes in `docs/fixes_v2.md`
+> (it reported a per-patient mean N\* of 9–23, a moderate-to-high threat).
+> The settings used for the results above were chosen after that, so the
+> 2017–2018 run is **not a clean confirmatory test**. Full timeline, the
+> first run's numbers and every deviation:
+> [`docs/preregistration_disclosure.md`](docs/preregistration_disclosure.md).
 
 - Pre-registration document: [`docs/analysis_plan.md`](docs/analysis_plan.md)
 - Git tag: [`v0.1-preregistration`](https://github.com/Akshat-stack47/BTP-XAI-Gaming/releases/tag/v0.1-preregistration)
-- All deviations logged: [`docs/changelog_trial_to_final.md`](docs/changelog_trial_to_final.md)
+- All deviations logged: [`docs/changelog_trial_to_final.md`](docs/changelog_trial_to_final.md),
+  [`docs/fixes_v2.md`](docs/fixes_v2.md), [`docs/preregistration_disclosure.md`](docs/preregistration_disclosure.md)
 
 ---
 

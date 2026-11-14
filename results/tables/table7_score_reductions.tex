@@ -1,21 +1,21 @@
 \begin{table*}[htbp]
   \centering
-  \caption{Mean risk-score reduction (0-1 scale): one explanation-guided lie vs. the best of N blind lies, and how often the explanation suggested no lie or a lie that raised the risk}
+  \caption{Mean risk-score reduction (0-1 scale): one explanation-guided lie vs. the best of N blind lies, and how often the explanation suggested no lie or a lie that raised the risk (which the patient then undoes; the column "lie not undone" shows the v3 rule)}
   \label{tab:reductions}
   \small
   \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
-  \begin{tabular}{lrrrrrrrr}
+  \begin{tabular}{lrrrrrrrrr}
     \toprule
-    Input & Model & Expl. & 1 explanation & 1 blind & 10 blind & 100 blind & \% no lie suggested & \% lie raised risk \\
+    Input & Model & Expl. & 1 explanation & 1 expl. (lie not undone) & 1 blind & 10 blind & 100 blind & \% no lie suggested & \% lie raised risk (undone) \\
     \midrule
-    Reported & RF & SHAP & 0.0129 & 0.024 & 0.0638 & 0.0785 & 19.3\% & 23.0\% \\
-    Reported & RF & LIME & 0.0117 & 0.024 & 0.0638 & 0.0785 & 3.3\% & 31.1\% \\
-    Reported & LR & SHAP & 0.0176 & 0.0248 & 0.0457 & 0.0525 & 31.1\% & 0.0\% \\
-    Reported & LR & LIME & 0.0223 & 0.0248 & 0.0457 & 0.0525 & 7.7\% & 0.0\% \\
-    Measured & RF & SHAP & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
-    Measured & RF & LIME & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
-    Measured & LR & SHAP & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
-    Measured & LR & LIME & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Reported & RF & SHAP & 0.0233 & 0.0177 & 0.024 & 0.0638 & 0.0785 & 1.8\% & 28.5\% \\
+    Reported & RF & LIME & 0.0181 & 0.0117 & 0.024 & 0.0638 & 0.0785 & 3.3\% & 31.1\% \\
+    Reported & LR & SHAP & 0.0242 & 0.0242 & 0.0248 & 0.0457 & 0.0525 & 0.0\% & 0.0\% \\
+    Reported & LR & LIME & 0.0223 & 0.0223 & 0.0248 & 0.0457 & 0.0525 & 7.7\% & 0.0\% \\
+    Measured & RF & SHAP & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Measured & RF & LIME & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Measured & LR & SHAP & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Measured & LR & LIME & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 100.0\% & 0.0\% \\
     \bottomrule
   \end{tabular}%
   }

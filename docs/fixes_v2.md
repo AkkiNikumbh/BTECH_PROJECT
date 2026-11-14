@@ -6,9 +6,12 @@ The original repo is left unchanged as the **comparison baseline**. The first co
 here is an unmodified snapshot of it, so `git diff <baseline-commit> HEAD` shows
 exactly what changed.
 
-> ⚠️ **The files in `results/` are still the OLD outputs from the baseline code.**
-> They have not been regenerated. Re-run the pipeline (below) to get results
-> from the fixed code.
+> The files in `results/` were regenerated with the v4 code (fixes 1–12) in
+> the library versions pinned in `requirements-lock.txt`.
+>
+> ⚠️ **Read [`preregistration_disclosure.md`](preregistration_disclosure.md)**:
+> a first final run on the held-out 2017–2018 data (code as pre-registered)
+> was seen before these fixes were made.
 
 ---
 
@@ -177,6 +180,43 @@ is now ≈ 69–78%. AUC is essentially unchanged; risk scores are now on a bala
 
 **Fix:** A seeded random sample of 100 training rows (`SHAP_BACKGROUND_N`, `SEED_SHAP_BACKGROUND`).
 
+## Fix 12 — The explanation-guided patient may undo a bad lie (`EXPLANATION_KEEP_BEST = True`)
+
+**Files:** `src/adversarial.py`, `src/config.py`, `scripts/run_final.py`, `scripts/run_analysis.py`
+
+**Bug:** The blind patient keeps the best score seen so far, *starting from
+their true score*, so a blind lie that raises the risk is never counted
+(reduction ≥ 0). The explanation-guided patient's single lie was always
+counted, even when it **raised** the risk (23–31% of patients for the random
+forest). The plan compares the two "with the same number of attempts", and
+both patients see the score after each attempt, so this was an unequal rule
+that biased the result against explanations.
+
+**Fix:** If the explanation-guided lie raises the score, the patient keeps
+their true answers (reduction 0), exactly like the blind patient. The raw
+effect of the suggested lie is still stored (`explanation_raw_reduction`) and
+reported in Table 7 (column "lie not undone") and in `final_results.csv`
+(`Mean_exp_raw_reduction`, `Pct_lie_undone`). This is a **deviation** from the
+pre-registered plan (step 5 of Strategy 1 reports the new score as is).
+
+**Tests:** `tests/test_fixes_v4.py`.
+
+## Supporting datasets from the research plan (§6.4)
+
+* **UCI Heart Disease (UCI 45)** — `scripts/check_uci_heart.py` (+ `tests/test_uci_hand_check.py`):
+  research-plan phase P1, "test the code on a small dataset where results can
+  be checked by hand". Runs the real pipeline classes with a logistic
+  regression and checks every output (risk score, SHAP values, explanation
+  lie, best blind lie, N\*) against a closed-form hand calculation, and prints
+  the numbers for the first patients so they can be redone with a calculator.
+* **CDC Diabetes Health Indicators (UCI 891)** — `scripts/run_uci_cdc_comparison.py`:
+  the comparison dataset. BRFSS 2015, 253,680 respondents, BMI from
+  self-reported height/weight (the only gameable feature; no nurse
+  measurement, so Model B only). BMI lie budget from the NHANES 2015–16 gap.
+  Output: `results/tables/table8_uci891_comparison.*`.
+
+Download both into `data/raw/` (see the README).
+
 ## Speed-up (no effect on results)
 
 The random forest is trained on all cores but now predicts on one
@@ -198,23 +238,26 @@ paper/thesis (they were made before the final experiment was re-run):
 | Class weight | none | balanced | models flagged almost no one |
 | SHAP LR background | first 100 rows | random 100 rows | unbiased background |
 | Random seeds | one stream | one per patient | identical blind baselines |
+| Explanation lie that raised the score | counted (negative) | undone (0), like the blind attacker | fair comparison (fix 12) |
 
 Reverting any of them is a one-line change in `src/config.py`, which is useful for a
 sensitivity table.
 
 ## Not changed
 
-The timeline / pre-registration process issues, the supporting datasets (UCI 891,
-UCI 45) and the missing references are not implementation fixes and are left to the team.
+The timeline. The pre-registration problem (held-out data seen before the
+fixes) cannot be undone; it is disclosed in `preregistration_disclosure.md`.
 
 ## How to regenerate results
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-lock.txt   # exact versions used for results/
 python scripts/download_nhanes.py
 python scripts/prepare_data.py       # 2015-2016 (seconds)
 python scripts/run_trial.py          # optional: trial on 2015-2016 (~5 min)
 python scripts/run_final.py          # 2017-2018 (~35 min)
 python scripts/run_analysis.py       # figures + tables (~1 min)
+python scripts/check_uci_heart.py    # P1 hand check on UCI 45 (seconds)
+python scripts/run_uci_cdc_comparison.py   # UCI 891 comparison (~25 min)
 python -m pytest tests/ -v
 ```

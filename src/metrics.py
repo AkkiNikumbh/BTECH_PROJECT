@@ -225,4 +225,38 @@ def run_statistical_tests(all_results):
         sig = "✅ YES" if pval < 0.05 else "❌ NO"
         print(f"  {run_key}: p={pval:.6f}, Cohen's d={cohens_d:.3f} → Significant: {sig}")
 
+    # SECONDARY (added after the v0.1 pre-registration): Holm correction for
+    # testing several configurations at alpha = 0.05 (statsmodels, as listed
+    # in the research plan §6.2). The pre-registered per-test p stays primary.
+    if tests:
+        from statsmodels.stats.multitest import multipletests
+        keys = list(tests)
+        reject, p_holm, _, _ = multipletests([tests[k]['wilcoxon_pval'] for k in keys],
+                                             alpha=0.05, method='holm')
+        for k, ph, rj in zip(keys, p_holm, reject):
+            tests[k]['wilcoxon_pval_holm'] = float(ph)
+            tests[k]['significant_holm'] = bool(rj)
+
     return tests
+
+
+def paired_auc_difference(y, p_a, p_b, n_bootstrap=1000, confidence=0.95, seed=42):
+    """AUC(model A) - AUC(model B) on the SAME patients, with a paired
+    bootstrap CI (patients resampled once, both models scored on the
+    same resample). Used for the Model A (measured) vs Model B
+    (self-reported) comparison: what does it cost or gain to use
+    self-reported instead of measured height/weight?"""
+    from sklearn.metrics import roc_auc_score
+    y, p_a, p_b = np.asarray(y), np.asarray(p_a), np.asarray(p_b)
+    diff = roc_auc_score(y, p_a) - roc_auc_score(y, p_b)
+    rng = np.random.RandomState(seed)
+    boot = []
+    for _ in range(n_bootstrap):
+        idx = rng.randint(0, len(y), len(y))
+        if len(np.unique(y[idx])) < 2:
+            continue
+        boot.append(roc_auc_score(y[idx], p_a[idx]) - roc_auc_score(y[idx], p_b[idx]))
+    alpha = 1 - confidence
+    lo, hi = np.percentile(boot, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return {'auc_a': float(roc_auc_score(y, p_a)), 'auc_b': float(roc_auc_score(y, p_b)),
+            'diff': float(diff), 'ci': (float(lo), float(hi))}

@@ -46,8 +46,10 @@ RESULTS_FIGURES = os.path.join(PROJECT_ROOT, 'results', 'figures')
 RESULTS_TABLES = os.path.join(PROJECT_ROOT, 'results', 'tables')
 # Per-config results of run_final.py. A NEW folder for every version of the
 # experiment code, so results from older code ('final_run_cache' = original,
-# 'final_run_cache_v2_fixed' = v2) are never re-loaded by mistake on resume.
-FINAL_RUN_CACHE = os.path.join(DATA_PROCESSED, 'final_run_cache_v3')
+# 'final_run_cache_v2_fixed' = v2, 'final_run_cache_v3' = v3,
+# 'final_run_cache_v4' = v4) are never
+# re-loaded by mistake on resume.
+FINAL_RUN_CACHE = os.path.join(DATA_PROCESSED, 'final_run_cache_v5')
 
 # ============================================================
 # MODEL PARAMETERS
@@ -109,6 +111,31 @@ LIE_MAGNITUDE = 'uniform'
 #   None = old behaviour.
 CLASS_WEIGHT = 'balanced'
 
+# FIX 12 — The explanation-guided patient also SEES the score after their
+#   one lie. A rational patient whose lie RAISES the score goes back to their
+#   true answers, exactly like the blind patient, who keeps the best score
+#   seen so far (starting from the true score). True = both attackers are
+#   floored at 0 (fair comparison, "same number of attempts" in the research
+#   plan). False = old v3 behaviour (a risk-raising lie counts as a negative
+#   reduction for the explanation attacker only). The raw, unfloored value
+#   is always stored as 'explanation_raw_reduction'.
+EXPLANATION_KEEP_BEST = True
+
+# FIX 13 — How the patient reads the SIGN of a SHAP value.
+#   A SHAP value says how much the patient's value of a feature moves the
+#   score away from the AVERAGE patient (for a linear model:
+#   w * (x - average)). Positive = "your value raises your risk".
+#   'toward_mean': positive -> move the value TOWARDS the average,
+#                  negative -> move it further AWAY from the average.
+#                  (A shorter-than-average patient told "your height raises
+#                  your risk" claims to be taller.) Same idea as reading LIME
+#                  bins (fix 2). Found by the P1 hand check on UCI 45.
+#   'sign'       : old rule — positive -> decrease, negative -> increase,
+#                  whatever the patient's value (wrong whenever the value is
+#                  below average and the model weight is positive, or the
+#                  other way round).
+SHAP_DIRECTION = 'toward_mean'
+
 # FIX 9 — LIME shows ALL features (None), so height/weight are never cut
 #   off from the explanation. Old value: 5 (of 7).
 LIME_N_FEATURES = None
@@ -148,6 +175,8 @@ FINAL_CONFIG = {
     'lie_direction': LIE_DIRECTION,             # v2 (fix 7); was 'both'
     'lie_magnitude': LIE_MAGNITUDE,             # v2 (fix 6); was max vs uniform
     'per_patient_seeding': True,                # v2 (fix 8)
+    'explanation_keep_best': EXPLANATION_KEEP_BEST,  # v4 (fix 12)
+    'shap_direction': SHAP_DIRECTION,           # v5 (fix 13); was 'sign'
 
     # Explanations
     'shap_method': 'tree',          # TreeSHAP for RF, LinearExplainer for LR

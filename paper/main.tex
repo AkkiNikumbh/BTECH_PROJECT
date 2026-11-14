@@ -341,17 +341,30 @@ implemented with scikit-learn~\cite{pedregosa2011sklearn}.
 
 The analysis plan (hypotheses, metric, tests, interpretation
 thresholds) was recorded as the git tag \texttt{v0.1-preregistration}
-in the project repository before the 2017--2018 data was processed.
-Before the final run reported here, we corrected implementation errors
-so that the code matches that plan (primary $N^*$ computed from the
-averaged curve; the pre-registered 2015--2016 lie budget; only
-self-reported values gameable).  We also made six changes that
-\emph{deviate} from it: lies only in the realistic direction; the same
-lie-size rule for both strategies (previously the explanation always
-used the maximum lie); LIME showing all seven features (previously
-five); balanced class weights; a random SHAP background; and
-per-patient random seeds.  Each is a documented switch in the code
-and can be reverted for sensitivity analysis.
+in the project repository on 28 October 2026, before the 2017--2018
+data was processed.  \textbf{A first final run on the held-out data was
+then made with the code as pre-registered, and its results were seen
+before the analysis reported here.}  That run reported a per-patient
+mean $N^*$ of 12.4 (95\% CI 10.5--14.5) for the primary configuration
+(reported RF+SHAP) and 9.0--23.1 across all eight configurations,
+which the pre-registered thresholds would classify as a moderate to
+high threat.  A subsequent code review found implementation errors,
+which we corrected so that the code matches the plan (primary $N^*$
+computed from the averaged curve; the pre-registered 2015--2016 lie
+budget; only self-reported values gameable, whereas the measured model
+had been attacked through its nurse-measured inputs).  We also made
+seven changes that \emph{deviate} from the plan: lies only in the
+realistic direction; the same lie-size rule for both strategies
+(previously the explanation always used the maximum lie while blind
+attempts drew smaller ones); LIME showing all seven features
+(previously five); balanced class weights; a random SHAP background;
+per-patient random seeds; and letting the explanation-guided patient
+undo a lie that raised their score, as the blind patient implicitly
+can.  Because these settings were chosen after a held-out result had
+been seen, the 2017--2018 evaluation is not a clean confirmatory test,
+and the change in conclusion should be read with that in mind.  Each
+deviation is a documented switch in the code; the full timeline and the
+first run's results are in \texttt{docs/preregistration\_disclosure.md}.
 
 % ============================================================
 \section{Results}
@@ -522,8 +535,10 @@ should I change?'', and the two can point in different directions.
         risk from anthropometric self-report in NHANES.
   \item \textbf{Pre-registration and deviations.} The plan was
         recorded as a git tag in the project repository rather than an
-        independent registry, and six settings deviate from it
-        (\cref{sec:preregistration}).
+        independent registry; a first run on the held-out data was
+        seen before the analysis was corrected, and seven settings
+        deviate from the plan (\cref{sec:preregistration}).  The held-out
+        result is therefore not a clean confirmatory test.
 \end{itemize}
 
 \subsection{Recommendations for Practitioners}

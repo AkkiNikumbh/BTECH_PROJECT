@@ -650,7 +650,19 @@ the git tag \texttt{v0.1-preregistration} in the project repository
 \subsection{Corrections and Deviations}
 \label{sec:deviations}
 
-A review of the code before the final run found implementation errors
+\paragraph{Disclosure.} A first final run on the held-out 2017--2018
+data was made with the code as pre-registered, shortly after the plan
+was tagged, and its results were seen by the team. It reported a
+per-patient mean $N^*$ of 12.4 (95\% CI 10.5--14.5) for the primary
+configuration and 9.0--23.1 across all eight configurations, a moderate
+to high threat under the pre-registered thresholds. The corrections and
+deviations below were made \emph{after} that, and the final run was
+repeated on the same data. The 2017--2018 evaluation is therefore not a
+clean confirmatory test in the sense of the research plan; the full
+timeline and the first run's table are in
+\texttt{docs/preregistration\_disclosure.md}.
+
+A review of the code after that first run found implementation errors
 that made it differ from the plan. These were corrected so that the
 code \emph{matches} the plan: (i) the primary $N^*$ is computed from
 the patient-averaged curve, as pre-registered, rather than as the mean
@@ -661,7 +673,7 @@ been attacked through its nurse-measured inputs); (iv) LIME directions
 are read from the bin condition; and (v) valid self-reports are no
 longer deleted as missing codes.
 
-Six further changes \emph{deviate} from the pre-registered plan and are
+Seven further changes \emph{deviate} from the pre-registered plan and are
 reported here as such (\cref{tab:deviations}). Each is a named setting
 in \texttt{src/config.py} and can be reverted for a sensitivity analysis.
 
@@ -680,6 +692,7 @@ in \texttt{src/config.py} and can be reverted for a sensitivity analysis.
     Class weights & none & balanced & recall was $\approx$3\% \\
     SHAP LR background & first 100 rows & random 100 rows & unbiased background \\
     Random seeds & one shared stream & one per patient & identical blind baselines \\
+    Bad explanation-guided lie & kept (negative reduction) & undone (reduction $\geq 0$) & the blind attacker keeps its best score, so both may see the score \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1050,8 +1063,11 @@ change?'', and the two can point in different directions.
         (\cref{tab:deviations}); that sensitivity analysis is future work.
   \item \textbf{Static model:} The model does not adapt to gaming.
   \item \textbf{Pre-registration:} The plan was recorded as a git tag in
-        the project repository rather than in an independent registry,
-        and six settings deviate from it (\cref{sec:deviations}).
+        the project repository rather than in an independent registry;
+        a first run on the held-out data was seen before the analysis was
+        corrected, and seven settings deviate from the plan
+        (\cref{sec:deviations}). The held-out result is therefore not a
+        clean confirmatory test.
 \end{itemize}
 
 \section{Comparison with Prior Work}
@@ -1105,7 +1121,8 @@ effective safeguard against gaming; verifying self-reported inputs is.}
   \item \textbf{Matched models:} Two models differing only in measured vs.\
         self-reported inputs, isolating the effect of input verification.
   \item \textbf{Pre-registered study:} Analysis plan recorded before the
-        held-out data was examined; deviations reported.
+        held-out data was examined; the first held-out run, the later
+        corrections and all deviations are disclosed.
   \item \textbf{Open code:} Full pipeline released at \url{https://github.com/AkkiNikumbh/BTECH_PROJECT}.
 \end{enumerate}
 

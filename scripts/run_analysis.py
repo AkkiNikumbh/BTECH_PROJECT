@@ -426,8 +426,46 @@ for suffix in ['rf_shap', 'rf_lime', 'lr_shap', 'lr_lime']:
 if rows6:
     t6 = pd.DataFrame(rows6)
     save_table(t6, 'table6_model_ab_comparison',
-               'Model A (Measured) vs Model B (Self-Reported): Vulnerability Comparison',
+               'Model A (Measured) vs Model B (Self-Reported): Vulnerability. '
+               'Model A has no input the patient can change, so its zeros are '
+               'true by design, not an experimental finding (see Table 6b).',
                'tab:model_ab', wide=True)
+
+# --- Table 6b: what does self-reporting change? (research plan §7.1) ---
+# Model A cannot be gamed by construction (nurse-measured inputs), so the
+# measurable part of the A-vs-B comparison is (1) how much B CAN be gamed
+# (Table 6) and (2) what using self-reported instead of measured
+# height/weight costs in accuracy, on the same test patients (this table).
+print("\n  [Table 6b] Effect of the input source on accuracy (paired)")
+import io as _io, contextlib as _cl
+from src.models import train_all_models
+from src.metrics import paired_auc_difference
+with _cl.redirect_stdout(_io.StringIO()):
+    _models, _split = train_all_models(
+        holdout_data['X_measured'], holdout_data['X_reported'], holdout_data['y'],
+        holdout_data['feature_names_measured'], holdout_data['feature_names_reported'])
+_te = _split['idx_test']
+rows6b = []
+for mt in ['rf', 'lr']:
+    pa = _models[f'measured_{mt}'].predict_proba(holdout_data['X_measured'][_te])
+    pb = _models[f'reported_{mt}'].predict_proba(holdout_data['X_reported'][_te])
+    d = paired_auc_difference(_split['y_test'], pa, pb)
+    rows6b.append({
+        'Model': mt.upper(),
+        'AUC A (measured)': round(d['auc_a'], 4),
+        'AUC B (self-reported)': round(d['auc_b'], 4),
+        'Difference A-B': round(d['diff'], 4),
+        '95% CI (paired bootstrap)': f"[{d['ci'][0]:+.4f}, {d['ci'][1]:+.4f}]",
+        'B: max reduction, 10 blind lies': round(float(np.mean(
+            [r['blind_reductions'][10] for r in all_results[f'reported_{mt}_shap']['results']])), 4)
+            if f'reported_{mt}_shap' in all_results else float('nan'),
+    })
+t6b = pd.DataFrame(rows6b)
+save_table(t6b, 'table6b_input_source_effect',
+           'Self-reported vs measured height/weight on the same patients: '
+           'accuracy difference (Model A minus Model B, paired bootstrap 95% CI) '
+           'and how far Model B can be gamed. Model A cannot be gamed by construction.',
+           'tab:input_source', wide=True)
 
 # --- Table 7: Score reductions and explanation outcomes ---
 print("\n  [Table 7] Score reductions")
@@ -437,24 +475,30 @@ for key in configs_8:
         continue
     res = all_results[key]['results']
     exp_r = np.array([r['explanation_reduction'] for r in res])
+    # raw effect of the suggested lie (before the patient undoes a bad one,
+    # FIX 12); older caches have no raw value -> fall back to the reduction
+    exp_raw = np.array([r.get('explanation_raw_reduction', r['explanation_reduction'])
+                        for r in res])
     parts = key.split('_')
     rows7.append({
         'Input':               '_'.join(parts[:-2]).capitalize(),
         'Model':               parts[-2].upper(),
         'Expl.':               parts[-1].upper(),
         '1 explanation':       round(float(exp_r.mean()), 4),
+        '1 expl. (lie not undone)': round(float(exp_raw.mean()), 4),
         '1 blind':             round(float(np.mean([r['blind_reductions'][1] for r in res])), 4),
         '10 blind':            round(float(np.mean([r['blind_reductions'][10] for r in res])), 4),
         '100 blind':           round(float(np.mean([r['blind_reductions'][100] for r in res])), 4),
         '% no lie suggested':  f"{np.mean([r['explanation_feature'] is None for r in res]) * 100:.1f}%",
-        '% lie raised risk':   f"{np.mean(exp_r < 0) * 100:.1f}%",
+        '% lie raised risk (undone)': f"{np.mean(exp_raw < 0) * 100:.1f}%",
     })
 if rows7:
     t7 = pd.DataFrame(rows7)
     save_table(t7, 'table7_score_reductions',
                'Mean risk-score reduction (0-1 scale): one explanation-guided lie vs. '
                'the best of N blind lies, and how often the explanation suggested no lie '
-               'or a lie that raised the risk',
+               'or a lie that raised the risk (which the patient then undoes; the '
+               'column "lie not undone" shows the v3 rule)',
                'tab:reductions', wide=True)
 
 print(f"\n  All tables saved to: {RESULTS_TABLES}")
