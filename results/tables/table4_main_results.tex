@@ -3,19 +3,19 @@
   \caption{Main Results: Explanation Equivalence $N^*$ Across All 8 Configurations}
   \label{tab:main_results}
   \small
-  \resizebox{\linewidth}{!}{%
-  \begin{tabular}{lrrrrrrrrrr}
+  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
+  \begin{tabular}{lrrrrrrrrr}
     \toprule
-    Config & Input & Model & Expl. & N patients & $N^*$ & 95\% CI & Per-patient mean $N^*$ & Per-patient median $N^*$ & \% Useless & \% Worth 10+ \\
+    Input & Model & Expl. & N patients & $N^*$ & 95\% CI & Per-patient mean $N^*$ & Per-patient median $N^*$ & \% Useless & \% Worth 10+ \\
     \midrule
-    reported\_rf\_shap & Reported & RF & SHAP & 887 & 0.0 & [0.00, 0.00] & 7.69 & 0.0 & 76.0\% & 8.7\% \\
-    reported\_rf\_lime & Reported & RF & LIME & 887 & 0.0 & [0.00, 0.00] & 7.07 & 0.0 & 73.8\% & 8.1\% \\
-    reported\_lr\_shap & Reported & LR & SHAP & 887 & 0.0 & [0.00, 0.00] & 2.58 & 0.0 & 66.4\% & 5.4\% \\
-    reported\_lr\_lime & Reported & LR & LIME & 887 & 0.0 & [0.00, 0.00] & 2.99 & 0.0 & 56.3\% & 6.1\% \\
-    measured\_rf\_shap & Measured & RF & SHAP & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
-    measured\_rf\_lime & Measured & RF & LIME & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
-    measured\_lr\_shap & Measured & LR & SHAP & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
-    measured\_lr\_lime & Measured & LR & LIME & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Reported & RF & SHAP & 887 & 0.0 & [0.00, 0.00] & 7.69 & 0.0 & 76.0\% & 8.7\% \\
+    Reported & RF & LIME & 887 & 0.0 & [0.00, 0.00] & 7.07 & 0.0 & 73.8\% & 8.1\% \\
+    Reported & LR & SHAP & 887 & 0.0 & [0.00, 0.00] & 2.58 & 0.0 & 66.4\% & 5.4\% \\
+    Reported & LR & LIME & 887 & 0.0 & [0.00, 0.00] & 2.99 & 0.0 & 56.3\% & 6.1\% \\
+    Measured & RF & SHAP & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Measured & RF & LIME & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Measured & LR & SHAP & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
+    Measured & LR & LIME & 887 & 0.0 & [0.00, 0.00] & 0.0 & 0.0 & 100.0\% & 0.0\% \\
     \bottomrule
   \end{tabular}%
   }

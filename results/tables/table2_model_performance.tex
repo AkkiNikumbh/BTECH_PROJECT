@@ -3,7 +3,7 @@
   \caption{Model Performance on NHANES 2017--2018 Test Set}
   \label{tab:model_perf}
   \small
-  \resizebox{\linewidth}{!}{%
+  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
   \begin{tabular}{lrrrrrrr}
     \toprule
     Config & Input & Model & Accuracy & Precision & Recall & F1 & AUC-ROC \\

@@ -3,7 +3,7 @@
   \caption{Model A (Measured) vs Model B (Self-Reported): Vulnerability Comparison}
   \label{tab:model_ab}
   \small
-  \resizebox{\linewidth}{!}{%
+  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
   \begin{tabular}{lrrrrrr}
     \toprule
     Config & Model A $N^*$ & Model B $N^*$ & A: reduction, 10 blind & B: reduction, 1 explanation & B: reduction, 10 blind & B can be gamed \\

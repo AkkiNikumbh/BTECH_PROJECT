@@ -23,6 +23,7 @@
 \usepackage{array}
 \usepackage{longtable}
 \usepackage{multirow}
+\PassOptionsToPackage{hyphens}{url}   % let long URLs break at - and /
 \usepackage{hyperref}
 \usepackage[capitalise,noabbrev]{cleveref}
 \usepackage{xcolor}
@@ -164,9 +165,11 @@ We further declare that:
         for any other degree or diploma.
   \item Wherever contributions of others have been used, they have been
         duly acknowledged.
-  \item The analysis plan for the final experiment was recorded as
-        the git tag \texttt{v0.1-preregistration} in the project repository (\url{https://github.com/Akshat-stack47/BTP-XAI-Gaming}) before the held-out dataset was examined;
-        all later deviations from it are reported in \cref{sec:deviations}.
+  \item The analysis plan for the final experiment was recorded before
+        the held-out dataset was examined, as a git tag
+        (\texttt{v0.1-preregistration}) in the project repository at
+        \url{https://github.com/Akshat-stack47/BTP-XAI-Gaming}; all later
+        deviations from it are reported in \cref{sec:deviations}.
 \end{itemize}
 
 \vspace{2cm}
@@ -609,8 +612,8 @@ sign of the weight.
   \[
     N^* = \inf \bigl\{ N \geq 0 : R_{\text{blind}}(N) \geq R_{\text{exp}} \bigr\}
   \]
-  estimated by linear interpolation on $\{(N, R_{\text{blind}}(N))\}_{N \in \mathcal{N}}$,
-  $\mathcal{N} = \{1,2,3,5,10,15,20,30,50,100\}$. $N^* = 0$ if one
+  estimated by linear interpolation on the points $(N, R_{\text{blind}}(N))$ for
+  \[\mathcal{N} = \{1,2,3,5,10,15,20,30,50,100\}.\] $N^* = 0$ if one
   explanation is no better than one blind attempt; $N^* = 101$ if it beats
   all 100 (censored).
 \end{definition}
@@ -640,7 +643,8 @@ dominate it.
 To ensure scientific integrity, the complete analysis plan (hypotheses,
 metric definitions, statistical tests and interpretation thresholds) was
 recorded before the held-out 2017--2018 data was examined, as
-the git tag \texttt{v0.1-preregistration} in the project repository (\url{https://github.com/Akshat-stack47/BTP-XAI-Gaming}), dated 28 October 2026. The plan is kept in
+the git tag \texttt{v0.1-preregistration} in the project repository
+(\url{https://github.com/Akshat-stack47/BTP-XAI-Gaming}), dated 28 October 2026. The plan is kept in
 \texttt{docs/analysis\_plan.md}.
 
 \subsection{Corrections and Deviations}
@@ -666,7 +670,7 @@ in \texttt{src/config.py} and can be reverted for a sensitivity analysis.
   \caption{Deviations from the pre-registered analysis plan.}
   \label{tab:deviations}
   \small
-  \begin{tabular}{p{3.2cm}p{3.6cm}p{3.6cm}p{4.2cm}}
+  \begin{tabular}{p{2.8cm}p{3.4cm}p{3.4cm}p{3.9cm}}
     \toprule
     Setting & Pre-registered & Used & Reason \\
     \midrule
@@ -739,7 +743,7 @@ feature set preparation. Key functions: \texttt{merge\_nhanes()},
 
 \subsection{gap\_analysis.py}
 Computes self-reporting error distributions and derives the lie budget.
-Key functions: \texttt{compute\_reporting\_gap()}, \texttt{define\_lie\_budget()}.
+Key functions:\newline\texttt{compute\_reporting\_gap()}, \texttt{define\_lie\_budget()}.
 
 \subsection{explanations.py}
 \texttt{ExplanationGenerator} wraps SHAP (TreeExplainer for RF,
@@ -762,9 +766,10 @@ confidence intervals and Wilcoxon signed-rank tests.
 
 \subsection{config.py}
 All seeds, paths and experiment settings, including the named switches
-for every deviation in \cref{tab:deviations} (\texttt{LIE\_DIRECTION},
-\texttt{LIE\_MAGNITUDE}, \texttt{CLASS\_WEIGHT}, \texttt{LIME\_N\_FEATURES},
-\texttt{SHAP\_BACKGROUND\_N}).
+for every deviation in \cref{tab:deviations} :
+\texttt{LIE\_DIRECTION}, \texttt{LIE\_MAGNITUDE},
+\texttt{CLASS\_WEIGHT}, \texttt{LIME\_N\_FEATURES} and
+\texttt{SHAP\_BACKGROUND\_N}.
 
 \section{Reproducibility}
 

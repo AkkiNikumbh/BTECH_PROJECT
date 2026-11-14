@@ -25,6 +25,10 @@
 \usepackage{array}
 \usepackage{cleveref}       % \cref (acmart already loads hyperref)
 
+% Narrow two-column layout: allow a little extra inter-word stretch
+% instead of letting long words or citations stick into the margin.
+\setlength{\emergencystretch}{1.5em}
+
 % ---- Metadata ------------------------------------------------
 \title{Can an AI Explanation Be Misused? Testing Whether SHAP and LIME
        Help Patients Game a Clinical Diabetes Risk Model}
@@ -224,7 +228,9 @@ We model an adversary (patient) who:
 \subsection{Realistic Lies}
 
 For each gameable feature $g$, the lie budget is
-$B(g) = \text{Percentile}_{95}(|x_g^{\text{self}} - x_g^{\text{measured}}|)$,
+\[
+  B(g) = \text{Percentile}_{95}\bigl(|x_g^{\text{self}} - x_g^{\text{measured}}|\bigr),
+\]
 computed on the 2015--2016 development cycle:
 $B(\text{height}) = 7.28\,\text{cm}$ and
 $B(\text{weight}) = 8.96\,\text{kg}$.  People over-report height
@@ -244,8 +250,10 @@ lies, averaged over patients.  The \emph{explanation equivalence} is
 \[
   N^* = \inf \{ N \geq 0 : R_{\text{blind}}(N) \geq R_{\text{exp}} \},
 \]
-estimated by linear interpolation on
-$N \mapsto R_{\text{blind}}(N)$, $N \in \{1,2,3,5,10,15,20,30,50,100\}$.
+estimated by linear interpolation on $N \mapsto R_{\text{blind}}(N)$ for
+\[
+  N \in \{1,2,3,5,10,15,20,30,50,100\}.
+\]
 $N^*=0$ if one explanation does no better than a single blind
 attempt; $N^*=101$ if it beats 100 attempts (censored).
 \end{definition}

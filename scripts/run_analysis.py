@@ -255,7 +255,9 @@ def df_to_latex(df, caption, label, col_format=None, wide=False):
     tab_open = f'  \\begin{{tabular}}{{{col_format}}}'
     tab_close = r'  \end{tabular}'
     if wide:
-        tab_open = r'  \resizebox{\linewidth}{!}{%' + '\n' + tab_open
+        # Shrink to the line width only if the table is wider; never enlarge.
+        tab_open = (r'  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%'
+                    + '\n' + tab_open)
         tab_close = tab_close + '%\n  }'
     lines = [
         f'\\begin{{{env}}}[htbp]',
@@ -278,12 +280,13 @@ def df_to_latex(df, caption, label, col_format=None, wide=False):
     return '\n'.join(lines) + '\n'
 
 
-def save_table(df, name, caption, label, wide=False):
+def save_table(df, name, caption, label, wide=False, tex_drop=None):
     csv_path = os.path.join(RESULTS_TABLES, f'{name}.csv')
     tex_path = os.path.join(RESULTS_TABLES, f'{name}.tex')
     df.to_csv(csv_path, index=False)
     with open(tex_path, 'w', encoding='utf-8') as f:
-        f.write(df_to_latex(df, caption, label, wide=wide))
+        tex_df = df.drop(columns=tex_drop) if tex_drop else df
+        f.write(df_to_latex(tex_df, caption, label, wide=wide))
     print(f"  Saved: {csv_path}  +  {tex_path}")
 
 
@@ -375,7 +378,7 @@ for key in configs_8:
 t4 = pd.DataFrame(rows4)
 save_table(t4, 'table4_main_results',
            'Main Results: Explanation Equivalence N* Across All 8 Configurations',
-           'tab:main_results', wide=True)
+           'tab:main_results', wide=True, tex_drop=['Config'])
 
 # --- Table 5: Statistical Tests ---
 print("\n  [Table 5] Statistical tests")

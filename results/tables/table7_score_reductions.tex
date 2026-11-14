@@ -3,7 +3,7 @@
   \caption{Mean risk-score reduction (0-1 scale): one explanation-guided lie vs. the best of N blind lies, and how often the explanation suggested no lie or a lie that raised the risk}
   \label{tab:reductions}
   \small
-  \resizebox{\linewidth}{!}{%
+  \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
   \begin{tabular}{lrrrrrrrr}
     \toprule
     Input & Model & Expl. & 1 explanation & 1 blind & 10 blind & 100 blind & \% no lie suggested & \% lie raised risk \\
