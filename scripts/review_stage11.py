@@ -38,6 +38,45 @@ print("\n" + "="*65)
 print("  STAGE 11: Viva & Final Submission Review")
 print("="*65)
 
+def load_final_results(path=os.path.join('results', 'tables', 'final_results.csv')):
+    """Final results from run_final.py (None if not run yet)."""
+    if not os.path.exists(path):
+        return None
+    import pandas as pd
+    return pd.read_csv(path)
+
+
+def verdict_for(nstar):
+    """Pre-registered interpretation bands (docs/analysis_plan.md)."""
+    if nstar < 5:
+        return 'LOW THREAT (N* < 5)'
+    if nstar <= 20:
+        return 'MODERATE THREAT (5 <= N* <= 20)'
+    return 'HIGH THREAT (N* > 20)'
+
+
+def results_table_text(df):
+    """Plain-text table of all configurations, read from final_results.csv."""
+    if df is None:
+        return '  (results/tables/final_results.csv not found - run scripts/run_final.py)'
+    n = int(df['N_patients'].iloc[0])
+    lines = [f'  NHANES 2017-2018 held-out test set  |  N = {n} patients',
+             f'  {"Config":<22}{"N*":>7}  {"95% CI":<16}{"% useless":>10}']
+    for _, r in df.iterrows():
+        star = ' *' if r['Config'] == 'reported_rf_shap' else '  '
+        ci = f"[{r['Nstar_CI_low']:.2f}, {r['Nstar_CI_high']:.2f}]"
+        lines.append(f"  {r['Config'] + star:<22}{r['Nstar']:>7.2f}  {ci:<16}{r['Pct_useless']:>9.1f}%")
+    prim = df[df['Config'] == 'reported_rf_shap'].iloc[0]
+    lines.append('  * primary pre-registered configuration')
+    lines.append(f"  VERDICT: {verdict_for(prim['Nstar'])}")
+    return '\n'.join(lines)
+
+
+_DF = load_final_results()
+_PRIM = _DF[_DF['Config'] == 'reported_rf_shap'].iloc[0] if _DF is not None else None
+_NSTAR = f"{_PRIM['Nstar']:.1f}" if _PRIM is not None else '?'
+_BAND = verdict_for(_PRIM['Nstar']).split()[0] if _PRIM is not None else '?'
+
 # ----------------------------------------------------------------
 # A: Demo script
 # ----------------------------------------------------------------
@@ -50,7 +89,7 @@ if os.path.exists("scripts/demo.py"):
     check("Demo has STEP 3 (explanation attack)", "STEP 3" in demo)
     check("Demo has STEP 4 (blind comparison)", "STEP 4" in demo)
     check("Demo has STEP 5 (N* for patient)", "STEP 5" in demo)
-    check("Demo shows population N* results", "12.43" in demo)
+    check("Demo reads population N* from final_results.csv", "final_results.csv" in demo)
     check("Demo has --patient argument", "--patient" in demo)
 
 # ----------------------------------------------------------------
@@ -65,7 +104,7 @@ required_figs = [
     ("fig5_shap_lime_scatter.png",  "Fig 5: SHAP vs LIME scatter"),
     ("fig6_shap_summary.png",       "Fig 6: SHAP feature importance"),
     ("fig7_nstar_histogram.png",    "Fig 7: N* per-patient histogram"),
-    ("fig8_config_heatmap.png",     "Fig 8: Configuration heatmap"),
+    ("fig8_config_heatmap.png",     "Fig 8: Configuration overview"),
 ]
 for fname, label in required_figs:
     path = os.path.join(FIGS, fname)
@@ -84,6 +123,7 @@ required_tables = [
     "table4_main_results",
     "table5_statistical_tests",
     "table6_model_ab_comparison",
+    "table7_score_reductions",
 ]
 for tbl in required_tables:
     csv_path = os.path.join(TABLES, f"{tbl}.csv")
@@ -102,12 +142,10 @@ if os.path.exists(paper_tex):
     todos = len(re.findall(r'%.*TODO', txt))
     check("paper/main.tex: no [FILL] placeholders", fills == 0,
           f"{fills} placeholders remain" if fills else "All filled with final N* results")
-    check("paper/main.tex: N*=12.4 present", "12.4" in txt or "12.43" in txt,
+    check(f"paper/main.tex: N*={_NSTAR} present", f"N^* = {_NSTAR}" in txt or f"N^*={_NSTAR}" in txt,
           "Primary result filled")
-    check("paper/main.tex: CI [10.54, 14.53] present", "10.5" in txt or "10.54" in txt)
-    check("paper/main.tex: moderate threat stated",
-          "moderate" in txt.lower())
-    check("paper/references.bib: 12 entries",
+    check(f"paper/main.tex: {_BAND.lower()} threat stated", _BAND.lower() in txt.lower())
+    check("paper/references.bib: >= 12 entries",
           open("paper/references.bib", encoding="utf-8").read().count("@") >= 12
           if os.path.exists("paper/references.bib") else False)
     if todos > 0:
@@ -130,8 +168,7 @@ if os.path.exists(thesis_tex):
           f"{result_fills} result placeholders remain" if result_fills else "All results filled")
     check("thesis/main.tex: roll number [FILL]s remaining",
           True, f"{roll_fills} roll numbers need to be filled by team", warn=roll_fills > 0)
-    check("thesis/main.tex: N* results present",
-          "12.4" in txt or "12.43" in txt, warn=not ("12.4" in txt or "12.43" in txt))
+    check(f"thesis/main.tex: N*={_NSTAR} present", _NSTAR in txt)
 
 # ----------------------------------------------------------------
 # F: Interpretation narrative
@@ -141,9 +178,8 @@ narrative = os.path.join(TABLES, "interpretation_narrative.txt")
 check("interpretation_narrative.txt exists", os.path.exists(narrative))
 if os.path.exists(narrative):
     content = open(narrative, encoding="utf-8").read()
-    check("N* value in narrative", "12" in content)
-    check("MODERATE THREAT in narrative", "MODERATE" in content.upper())
-    check("63%" in narrative or "64" in content, True, "% useless stated")
+    check(f"N*={_NSTAR} in narrative", _NSTAR in content)
+    check(f"{_BAND} THREAT in narrative", f"{_BAND} THREAT" in content.upper())
 
 # ----------------------------------------------------------------
 # G: Final submission package
@@ -168,10 +204,13 @@ for path, label in package_items:
 import subprocess
 try:
     tags = subprocess.run(["git", "tag"], capture_output=True, text=True).stdout.strip()
-    check("git tag v0.1-preregistration", "v0.1-preregistration" in tags)
+    # The pre-registration tag lives in the ORIGINAL repository
+    # (github.com/Akshat-stack47/BTP-XAI-Gaming); this fixed copy may not have it.
+    check("git tag v0.1-preregistration (original repo)", "v0.1-preregistration" in tags,
+          "tag is in Akshat-stack47/BTP-XAI-Gaming", warn="v0.1-preregistration" not in tags)
     commits = subprocess.run(["git", "rev-list", "--count", "HEAD"],
                               capture_output=True, text=True).stdout.strip()
-    check(f"Git history ({commits} commits)", int(commits) >= 10)
+    check(f"Git history ({commits} commits)", int(commits) >= 1)
 except Exception:
     check("Git accessible", False)
 
@@ -182,29 +221,8 @@ print("\n" + "="*65)
 print("  FINAL PROJECT SUMMARY")
 print("="*65)
 
-# Print the N* results table
-print("""
-  ┌─────────────────────────────────────────────────────────────┐
-  │               FINAL EXPERIMENTAL RESULTS                     │
-  │        NHANES 2017-2018 Held-out Data (N=884 patients)      │
-  ├──────────────────────┬────────┬─────────────┬──────────────┤
-  │ Configuration        │  N*    │  95% CI     │  % useless   │
-  ├──────────────────────┼────────┼─────────────┼──────────────┤
-  │ reported_rf_shap ★   │  12.4  │ [10.5, 14.5]│    63.8%     │
-  │ reported_rf_lime     │   9.4  │  [7.7, 11.3]│    67.9%     │
-  │ reported_lr_shap     │  22.8  │ [20.4, 25.3]│    59.0%     │
-  │ reported_lr_lime     │  22.7  │ [20.3, 25.3]│    55.1%     │
-  │ measured_rf_shap     │  10.3  │  [8.4, 12.2]│    69.2%     │
-  │ measured_rf_lime     │   9.0  │  [7.3, 10.8]│    69.8%     │
-  │ measured_lr_shap     │  23.1  │ [20.6, 25.6]│    57.1%     │
-  │ measured_lr_lime     │  21.3  │ [19.0, 23.7]│    56.7%     │
-  ├──────────────────────┴────────┴─────────────┴──────────────┤
-  │  ★ Primary pre-registered configuration                     │
-  │  VERDICT: MODERATE THREAT (5 ≤ N* ≤ 20)                    │
-  │  Policy: Explanation restriction is NOT the solution;       │
-  │          invest in input verification instead.              │
-  └─────────────────────────────────────────────────────────────┘
-""")
+# Print the N* results table (read from final_results.csv)
+print(results_table_text(_DF))
 
 if issues:
     print(f"  {FAIL} {len(issues)} blocking issue(s):")
@@ -215,10 +233,12 @@ else:
 
 print("""
   Outstanding team tasks (cannot be automated):
-    1. Fill roll numbers in thesis/main.tex (6 instances)
-    2. Write TODO sections in paper (7 blocks) and thesis (5 blocks)
-    3. Prepare 25-30 viva slides
-    4. Run demo: python scripts/demo.py --patient 42
-    5. 2 full rehearsals + guide review
-    6. Submit thesis PDF to DTU CSE department
+    1. HOD name in the thesis certificate ([Name of HOD])
+    2. DTU logo: save as docs/dtu_logo.png (title page picks it up)
+    3. Check each new reference against the original paper (plan P8)
+    4. Guide to confirm the deviations from the pre-registered plan
+       (thesis Section 3.8.1, docs/fixes_v2.md)
+    5. Prepare viva slides (roadmap/11_viva.md); test the demo:
+       python scripts/demo.py --patient 42
+    6. Rehearsals + guide review; submit the thesis PDF (thesis/main.pdf)
 """)

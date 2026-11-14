@@ -5,8 +5,8 @@
 
 [![Pre-registration](https://img.shields.io/badge/Pre--registered-v0.1--preregistration-blue)](https://github.com/Akshat-stack47/BTP-XAI-Gaming/releases/tag/v0.1-preregistration)
 [![Python](https://img.shields.io/badge/Python-3.12-green)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-7%2F7%20passing-brightgreen)]()
-[![Review](https://img.shields.io/badge/Integrity%20checks-164%2F164-brightgreen)]()
+[![Tests](https://img.shields.io/badge/Tests-40%2F40%20passing-brightgreen)]()
+[![Review](https://img.shields.io/badge/Integrity%20checks-163%2F164%20(1%20warning)-brightgreen)]()
 
 ---
 
@@ -100,7 +100,7 @@ BTP/
 │
 ├── paper/                  # Research paper (LaTeX)
 ├── thesis/                 # BTP thesis (LaTeX, 7 chapters + 4 appendices)
-├── tests/                  # 7 unit tests
+├── tests/                  # 40 unit tests
 └── roadmap/                # Stage-by-stage project roadmap (11 stages)
 ```
 
@@ -153,7 +153,7 @@ python scripts/demo.py --patient 42
 ### 7. Run tests
 
 ```bash
-python -m pytest tests/ -v          # 7 unit tests
+python -m pytest tests/ -v          # 40 unit tests
 python scripts/final_review.py      # 164-check integrity
 ```
 

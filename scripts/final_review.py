@@ -36,6 +36,40 @@ def chk(label, condition, detail="", warning_only=False):
     else:
         fail(label, detail)
 
+def load_final_results(path=os.path.join('results', 'tables', 'final_results.csv')):
+    """Final results from run_final.py (None if not run yet)."""
+    if not os.path.exists(path):
+        return None
+    import pandas as pd
+    return pd.read_csv(path)
+
+
+def verdict_for(nstar):
+    """Pre-registered interpretation bands (docs/analysis_plan.md)."""
+    if nstar < 5:
+        return 'LOW THREAT (N* < 5)'
+    if nstar <= 20:
+        return 'MODERATE THREAT (5 <= N* <= 20)'
+    return 'HIGH THREAT (N* > 20)'
+
+
+def results_table_text(df):
+    """Plain-text table of all configurations, read from final_results.csv."""
+    if df is None:
+        return '  (results/tables/final_results.csv not found - run scripts/run_final.py)'
+    n = int(df['N_patients'].iloc[0])
+    lines = [f'  NHANES 2017-2018 held-out test set  |  N = {n} patients',
+             f'  {"Config":<22}{"N*":>7}  {"95% CI":<16}{"% useless":>10}']
+    for _, r in df.iterrows():
+        star = ' *' if r['Config'] == 'reported_rf_shap' else '  '
+        ci = f"[{r['Nstar_CI_low']:.2f}, {r['Nstar_CI_high']:.2f}]"
+        lines.append(f"  {r['Config'] + star:<22}{r['Nstar']:>7.2f}  {ci:<16}{r['Pct_useless']:>9.1f}%")
+    prim = df[df['Config'] == 'reported_rf_shap'].iloc[0]
+    lines.append('  * primary pre-registered configuration')
+    lines.append(f"  VERDICT: {verdict_for(prim['Nstar'])}")
+    return '\n'.join(lines)
+
+
 def section(title):
     print(f"\n{'='*58}")
     print(f"  {title}")
@@ -196,21 +230,20 @@ if os.path.exists(res_csv):
     chk("8 config rows in results", len(df) == 8, f"{len(df)} rows")
     chk("Primary config present",
         'reported_rf_shap' in df['Config'].values if 'Config' in df.columns else False)
-    if 'Mean_Nstar' in df.columns:
-        prim = df[df['Config'] == 'reported_rf_shap']['Mean_Nstar'].values
-        if len(prim):
-            chk("Primary N* ≈ 12.4", abs(prim[0] - 12.43) < 0.1, f"N*={prim[0]:.2f}")
-    if 'CI_low' in df.columns:
-        prim = df[df['Config'] == 'reported_rf_shap']
-        if len(prim):
-            chk("Primary CI [10.54, 14.53]",
-                abs(prim['CI_low'].values[0] - 10.54) < 0.1,
-                f"[{prim['CI_low'].values[0]:.2f}, {prim['CI_high'].values[0]:.2f}]")
-    # Check Wilcoxon p=1.0 (all negative Cohen's d)
+    chk("Primary N* column (pre-registered, v3)", 'Nstar' in df.columns)
+    if 'Nstar' in df.columns:
+        prim = df[df['Config'] == 'reported_rf_shap'].iloc[0]
+        chk("Primary N* inside its 95% CI",
+            prim['Nstar_CI_low'] <= prim['Nstar'] <= prim['Nstar_CI_high'],
+            f"N*={prim['Nstar']:.2f} [{prim['Nstar_CI_low']:.2f}, {prim['Nstar_CI_high']:.2f}]")
+        meas = df[df['Input'] == 'measured']
+        chk("Model A (measured) cannot be gamed (N* = 0)",
+            (meas['Nstar'] == 0).all() and (meas['Mean_exp_reduction'] == 0).all())
     if 'Cohens_d' in df.columns:
-        all_negative = (df['Cohens_d'] < 0).all()
-        chk("Cohen's d negative for all configs (blind ≥ explanation at N=10)",
-            all_negative, f"range: [{df['Cohens_d'].min():.2f}, {df['Cohens_d'].max():.2f}]")
+        rep = df[df['Input'] == 'reported']
+        chk("Cohen's d negative for Model B configs (blind N=10 > explanation)",
+            (rep['Cohens_d'] < 0).all(),
+            f"range: [{rep['Cohens_d'].min():.2f}, {rep['Cohens_d'].max():.2f}]")
 
 # ================================================================
 section("6. PUBLICATION FIGURES")
@@ -301,8 +334,11 @@ try:
                               capture_output=True, text=True).stdout.strip()
     latest  = subprocess.run(['git', 'log', '--oneline', '-1'],
                               capture_output=True, text=True).stdout.strip()
-    chk("git tag v0.1-preregistration", 'v0.1-preregistration' in tags)
-    chk("≥10 commits in history",       int(commits) >= 10, f"{commits} commits")
+    # The pre-registration tag lives in the ORIGINAL repository
+    # (github.com/Akshat-stack47/BTP-XAI-Gaming); this fixed copy may not have it.
+    chk("git tag v0.1-preregistration (original repo)", 'v0.1-preregistration' in tags,
+        "tag is in Akshat-stack47/BTP-XAI-Gaming", warning_only=True)
+    chk("Git history present", int(commits) >= 1, f"{commits} commits")
     ok(f"Latest commit: {latest}")
 except Exception as e:
     fail("Git check error", str(e))
@@ -319,20 +355,25 @@ if os.path.exists(paper):
     result_fills = fills - roll
     chk("Zero result [FILL] placeholders", result_fills == 0,
         f"{result_fills} remain" if result_fills else "All results filled")
-    chk("N*=12.4 stated",                '12.4' in txt or '12.43' in txt)
-    chk("CI [10.5, 14.5] stated",        '10.5' in txt or '10.54' in txt)
-    chk("MODERATE threat stated",        'moderate' in txt.lower())
-    chk("63.8% useless stated",          '63.8' in txt or '63' in txt)
+    _df = load_final_results()
+    if _df is not None:
+        _p = _df[_df['Config'] == 'reported_rf_shap'].iloc[0]
+        _band = verdict_for(_p['Nstar']).split(' (')[0].split()[0].lower()   # low / moderate / high
+        chk(f"Primary N* = {_p['Nstar']:.1f} stated", f"{_p['Nstar']:.1f}" in txt)
+        chk(f"Verdict '{_band}' stated",          _band in txt.lower())
+        chk(f"{_p['Pct_useless']:.1f}% useless stated", f"{_p['Pct_useless']:.1f}" in txt)
+    else:
+        chk("final_results.csv available for cross-check", False)
     chk("Pre-registration cited",        'pre-register' in txt.lower() or 'preregist' in txt.lower())
     chk("NHANES cited",                  'johnson2014national' in txt)
-    chk("12 bibliography entries",
+    chk("Bibliography entries (>= 12)",
         open('paper/references.bib', 'r', encoding='utf-8').read().count('@') >= 12
         if os.path.exists('paper/references.bib') else False)
     chk("All 7 sections present",
         all(s in txt for s in [
             r'\section{Introduction}', r'\section{Related Work}',
             r'\section{Problem Setup}', r'\section{Methodology}',
-            r'\section{Experiments and Results}',
+            r'\section{Results}',
             r'\section{Discussion}', r'\section{Conclusion}']))
 
 # ================================================================
@@ -349,7 +390,10 @@ if os.path.exists(thesis):
         f"{result_fills} remain" if result_fills else "All results filled")
     chk(f"Roll# [FILL]s ({roll}) — team must fill", True,
         f"{roll} roll numbers for team", warning_only=roll > 0)
-    chk("N*=12.4 in thesis",              '12.4' in txt or '12.43' in txt)
+    _df = load_final_results()
+    if _df is not None:
+        _p = _df[_df['Config'] == 'reported_rf_shap'].iloc[0]
+        chk(f"Primary N* = {_p['Nstar']:.1f} in thesis", f"{_p['Nstar']:.1f}" in txt)
     chk("All 7 chapters",
         all(s in txt for s in [
             r'\chapter{Introduction}', r'\chapter{Literature Review}',
@@ -364,7 +408,7 @@ if os.path.exists(thesis):
     chk("Declaration page",     r'\chapter*{Declaration}'     in txt)
     chk("Algorithm 1 present",  r'\begin{algorithm}'          in txt)
     chk("Definition block",     r'\begin{definition}'         in txt)
-    chk("Lie budget values",    '7.29' in txt and '8.96' in txt)
+    chk("Lie budget values",    '7.28' in txt and '8.96' in txt)
     chk("Pre-reg URL in thesis",'github.com' in txt.lower() and 'preregistration' in txt.lower())
 
 # ================================================================
@@ -379,8 +423,8 @@ if os.path.exists(demo):
     chk("STEP 3: guided attack",      'STEP 3' in dtxt)
     chk("STEP 4: blind comparison",   'STEP 4' in dtxt)
     chk("STEP 5: N* for patient",     'STEP 5' in dtxt)
-    chk("Population N* result shown", '12.43' in dtxt)
-    chk("Lie budget values correct",  '7.29' in dtxt and '8.96' in dtxt)
+    chk("Population N* read from final_results.csv", 'final_results.csv' in dtxt)
+    chk("No hard-coded old result (12.43)", '12.43' not in dtxt)
     chk("--patient argument",         '--patient' in dtxt)
     chk("Uses held-out 2017-2018",    '2017_2018' in dtxt or '2017-2018' in dtxt)
 
@@ -426,9 +470,9 @@ required_files = {
     'docs/column_mapping.md':    'NHANES columns',
     # Paper
     'paper/main.tex':            'Research paper LaTeX',
-    'paper/references.bib':      'Bibliography (12 entries)',
+    'paper/references.bib':      'Bibliography',
     # Thesis
-    'thesis/main.tex':           'BTP thesis LaTeX (974 lines)',
+    'thesis/main.tex':           'BTP thesis LaTeX',
     # Roadmap
     'roadmap/00_master_roadmap.md': 'Master roadmap',
 }
@@ -443,28 +487,7 @@ for path, label in required_files.items():
 # ================================================================
 section("FINAL SUMMARY")
 # ================================================================
-print(f"""
-  ┌──────────────────────────────────────────────────────┐
-  │              FINAL PROJECT RESULTS                    │
-  │   NHANES 2017-2018 Holdout  |  N = 884 patients      │
-  ├──────────────────────────┬──────────┬────────────────┤
-  │ Config (primary ★)       │   N*     │   95% CI       │
-  ├──────────────────────────┼──────────┼────────────────┤
-  │ reported_rf_shap  ★      │  12.43   │ [10.54, 14.53] │
-  │ reported_rf_lime         │   9.41   │  [7.66, 11.27] │
-  │ reported_lr_shap         │  22.77   │ [20.36, 25.28] │
-  │ reported_lr_lime         │  22.71   │ [20.28, 25.26] │
-  │ measured_rf_shap         │  10.27   │  [8.42, 12.15] │
-  │ measured_rf_lime         │   9.01   │  [7.32, 10.77] │
-  │ measured_lr_shap         │  23.05   │ [20.58, 25.61] │
-  │ measured_lr_lime         │  21.27   │ [18.99, 23.71] │
-  ├──────────────────────────┴──────────┴────────────────┤
-  │  VERDICT: MODERATE THREAT (5 ≤ N* ≤ 20)             │
-  │  63.8% patients: explanation gives ZERO advantage    │
-  │  17.2% patients: explanation worth 10+ blind queries │
-  │  Policy: Verify inputs; don't just hide explanations │
-  └──────────────────────────────────────────────────────┘
-""")
+print(results_table_text(load_final_results()))
 
 total_checks = totals['pass'] + totals['fail'] + totals['warn']
 print(f"  Checks run : {total_checks}")
@@ -486,12 +509,12 @@ if warnings:
 
 print(f"""
   TEAM ACTIONS REQUIRED (cannot be automated):
-    1. Fill 6 roll numbers in thesis/main.tex
-    2. Write 7 TODO sections in paper/main.tex (per §09 schedule)
-    3. Write 5 TODO sections in thesis/main.tex (per §10 schedule)
-    4. Add DTU logo: docs/dtu_logo.png → thesis/
-    5. Prepare 25-30 viva slides (per roadmap/11_viva.md)
-    6. Test demo: python scripts/demo.py --patient 42
-    7. 2 full rehearsal sessions + guide review
-    8. Submit thesis PDF to DTU CSE department by May 31, 2027
+    1. HOD name in the thesis certificate ([Name of HOD])
+    2. DTU logo: save as docs/dtu_logo.png (title page picks it up)
+    3. Check each new reference against the original paper (plan P8)
+    4. Guide to confirm the deviations from the pre-registered plan
+       (thesis Section 3.8.1, docs/fixes_v2.md)
+    5. Prepare viva slides (roadmap/11_viva.md); test the demo:
+       python scripts/demo.py --patient 42
+    6. Rehearsals + guide review; submit the thesis PDF (thesis/main.pdf)
 """)

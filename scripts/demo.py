@@ -66,7 +66,7 @@ def load_everything():
 
     # Lie budget from dev pickle
     lie_budget = dev.get('lie_budget',
-                 {'height': {'max_lie': 7.29, 'mean_direction': 'positive'},
+                 {'height': {'max_lie': 7.28, 'mean_direction': 'positive'},
                   'weight': {'max_lie': 8.96, 'mean_direction': 'negative'}})
 
     # Gameable features (those with height or weight in name)
@@ -186,16 +186,57 @@ def run_demo(patient_idx=42):
     # ── Population summary ────────────────────────────────────────
     print()
     sep('\u2550')
-    print(f"  POPULATION RESULT (2017-2018 holdout, N=884 patients)")
-    print(f"  Primary config: reported_rf_shap")
-    sep()
-    print(f"  Mean N*   = 12.43  [95% CI: 10.54\u201314.53]")
-    print(f"  Median    =  0.00  (63.8% of patients: explanation useless)")
-    print(f"  17.2%     of patients: explanation worth 10+ blind attempts")
-    print(f"  VERDICT   : MODERATE THREAT (5 \u2264 N* \u2264 20)")
-    print(f"  POLICY    : Verify inputs; restricting explanations is NOT the solution")
+    # Read the population result from the final experiment (never hard-coded)
+    df = load_final_results()
+    if df is None:
+        print("  POPULATION RESULT: run scripts/run_final.py first")
+    else:
+        prim = df[df['Config'] == 'reported_rf_shap'].iloc[0]
+        print(f"  POPULATION RESULT (2017-2018 holdout, N={int(prim['N_patients'])} patients)")
+        print(f"  Primary config: reported_rf_shap")
+        sep()
+        print(f"  N* (pre-registered) = {prim['Nstar']:.2f}  "
+              f"[95% CI: {prim['Nstar_CI_low']:.2f}\u2013{prim['Nstar_CI_high']:.2f}]")
+        print(f"  {prim['Pct_useless']:.1f}% of patients: explanation no better than 1 blind attempt")
+        print(f"  {prim['Pct_worth_10p']:.1f}% of patients: explanation worth 10+ blind attempts")
+        print(f"  VERDICT   : {verdict_for(prim['Nstar'])}")
+        print(f"  POLICY    : Verify inputs; restricting explanations is NOT the solution")
     sep('\u2550')
     print()
+
+def load_final_results(path=os.path.join('results', 'tables', 'final_results.csv')):
+    """Final results from run_final.py (None if not run yet)."""
+    if not os.path.exists(path):
+        return None
+    import pandas as pd
+    return pd.read_csv(path)
+
+
+def verdict_for(nstar):
+    """Pre-registered interpretation bands (docs/analysis_plan.md)."""
+    if nstar < 5:
+        return 'LOW THREAT (N* < 5)'
+    if nstar <= 20:
+        return 'MODERATE THREAT (5 <= N* <= 20)'
+    return 'HIGH THREAT (N* > 20)'
+
+
+def results_table_text(df):
+    """Plain-text table of all configurations, read from final_results.csv."""
+    if df is None:
+        return '  (results/tables/final_results.csv not found - run scripts/run_final.py)'
+    n = int(df['N_patients'].iloc[0])
+    lines = [f'  NHANES 2017-2018 held-out test set  |  N = {n} patients',
+             f'  {"Config":<22}{"N*":>7}  {"95% CI":<16}{"% useless":>10}']
+    for _, r in df.iterrows():
+        star = ' *' if r['Config'] == 'reported_rf_shap' else '  '
+        ci = f"[{r['Nstar_CI_low']:.2f}, {r['Nstar_CI_high']:.2f}]"
+        lines.append(f"  {r['Config'] + star:<22}{r['Nstar']:>7.2f}  {ci:<16}{r['Pct_useless']:>9.1f}%")
+    prim = df[df['Config'] == 'reported_rf_shap'].iloc[0]
+    lines.append('  * primary pre-registered configuration')
+    lines.append(f"  VERDICT: {verdict_for(prim['Nstar'])}")
+    return '\n'.join(lines)
+
 
 def list_info():
     hold_pkl = 'data/processed/nhanes_2017_2018_prepared.pkl'
