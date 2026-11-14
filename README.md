@@ -166,11 +166,11 @@ python scripts/final_review.py      # 164-check integrity
 | Fig 1 | Reporting gap KDE — height & weight self-reporting bias |
 | Fig 2 ★ | Main result: N* equivalence curve across all 8 configs |
 | Fig 3 | Score reduction boxplots (explanation vs. blind) |
-| Fig 4 | Model A (measured) vs Model B (reported) comparison |
-| Fig 5 | SHAP vs. LIME per-patient N* scatter |
+| Fig 4 | Model A vs Model B: how much the risk score can be lowered |
+| Fig 5 | SHAP vs. LIME agreement (per-patient score reductions) |
 | Fig 6 | SHAP feature importance beeswarm |
 | Fig 7 | Per-patient N* histogram (population distribution) |
-| Fig 8 | Configuration heatmap (all 8 configs) |
+| Fig 8 | All 8 configs: one explanation vs one blind attempt |
 
 ---
 

@@ -1,5 +1,5 @@
-Config,Model A (Measured) N*,Model B (Reported) N*,Difference (B-A),B is more vulnerable
-RF+SHAP,0.0,0.0,0.0,✗
-RF+LIME,0.0,0.0,0.0,✗
-LR+SHAP,0.0,0.0,0.0,✗
-LR+LIME,0.0,0.0,0.0,✗
+Config,Model A N*,Model B N*,"A: reduction, 10 blind","B: reduction, 1 explanation","B: reduction, 10 blind",B can be gamed
+RF+SHAP,0.0,0.0,0.0,0.0129,0.0638,✓
+RF+LIME,0.0,0.0,0.0,0.0117,0.0638,✓
+LR+SHAP,0.0,0.0,0.0,0.0176,0.0457,✓
+LR+LIME,0.0,0.0,0.0,0.0223,0.0457,✓

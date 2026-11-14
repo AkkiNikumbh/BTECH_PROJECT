@@ -1,0 +1,40 @@
+% NHANES column mapping (LaTeX version of docs/column_mapping.md),
+% included by thesis/main.tex, Appendix A.
+
+\Cref{tab:columns} lists the NHANES variables used in this project, their
+source, and whether a patient could change them (``gameable'').  Only
+\texttt{WHD010} and \texttt{WHD020} are attacked in the experiment;
+\texttt{SMQ020} and \texttt{PAQ650} are self-reported yes/no answers that
+could in principle be flipped, but are not attacked because no
+reported-vs-measured gap exists to bound such a lie.
+
+\begin{longtable}{p{2.3cm}p{7.2cm}p{1.6cm}p{4.0cm}}
+  \caption{NHANES columns, sources and gameability.}
+  \label{tab:columns}\\
+  \toprule
+  Column & Description & Gameable? & Reason \\
+  \midrule
+  \endfirsthead
+  \toprule
+  Column & Description & Gameable? & Reason \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  \texttt{SEQN}     & Respondent sequence number (patient ID) & -- & Identifier \\
+  \texttt{RIDAGEYR} & Age in years at screening & No & Verified by ID \\
+  \texttt{RIAGENDR} & Gender (1 = male, 2 = female) & No & Recorded by staff \\
+  \texttt{BMXHT}    & \textbf{Measured} standing height (cm), nurse & No & Nurse measures directly \\
+  \texttt{BMXWT}    & \textbf{Measured} body weight (kg), nurse & No & Nurse measures directly \\
+  \texttt{WHD010}   & \textbf{Self-reported} height (inches; $\times 2.54$ to cm); valid 47--84, missing codes 7777/9999 & \textbf{Yes} & Patient reports verbally; bounded by the reported-vs-measured gap \\
+  \texttt{WHD020}   & \textbf{Self-reported} weight (pounds; $\times 0.453592$ to kg); valid 75--600, missing codes 7777/9999 & \textbf{Yes} & Patient reports verbally; bounded by the reported-vs-measured gap \\
+  \texttt{LBXGH}    & Glycohaemoglobin HbA1c (\%) --- \textbf{diabetes target} ($\geq 6.5\%$) & No & Laboratory blood test \\
+  \texttt{BPXSY1}   & Systolic blood pressure, first reading (mmHg) & No & Measured by staff \\
+  \texttt{SMQ020}   & Smoked at least 100 cigarettes in life (1 = yes, 2 = no; missing 7/9) & Maybe & Binary self-report (not attacked) \\
+  \texttt{PAQ650}   & Vigorous recreational activity (1 = yes, 2 = no; missing 7/9) & Maybe & Binary self-report (not attacked) \\
+\end{longtable}
+
+The two feature sets use \texttt{RIDAGEYR}, \texttt{RIAGENDR},
+\texttt{BPXSY1}, \texttt{SMQ020}, \texttt{PAQ650} plus either the
+measured pair (\texttt{BMXHT}, \texttt{BMXWT}; Model A) or the
+self-reported pair (\texttt{WHD010}, \texttt{WHD020}; Model B).

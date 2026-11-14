@@ -218,38 +218,72 @@ print("  Generating Results Tables (CSV + LaTeX)")
 print("=" * 70)
 
 
-def df_to_latex(df, caption, label, col_format=None):
-    """Convert DataFrame to a LaTeX table string."""
+_LATEX_SPECIAL = {
+    '\\': r'\textbackslash{}', '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#',
+    '_': r'\_', '{': r'\{', '}': r'\}', '~': r'\textasciitilde{}',
+    '^': r'\textasciicircum{}',
+}
+_LATEX_TEXT = {'✓': 'Yes', '✗': 'No', '–': '--', '—': '---', '≈': r'$\approx$',
+               '±': r'$\pm$', '≥': r'$\geq$', '≤': r'$\leq$', '→': r'$\rightarrow$'}
+
+
+def latex_escape(value):
+    """Make one table cell / header safe for LaTeX (escapes _ % & etc.;
+    replaces symbols such as ✓ ✗ that pdfLaTeX cannot typeset)."""
+    text = str(value)
+    out = ''.join(_LATEX_SPECIAL.get(ch, ch) for ch in text)
+    for k, v in _LATEX_TEXT.items():
+        out = out.replace(k, v)
+    # N* in headers -> proper math
+    out = out.replace('N*', r'$N^*$')
+    return out
+
+
+def df_to_latex(df, caption, label, col_format=None, wide=False):
+    """Convert DataFrame to a self-contained LaTeX table (booktabs).
+
+    The file contains its own table environment, caption and label, so the
+    paper/thesis should include it directly with an input command, not
+    inside another table environment.
+    wide=True -> table* (spans both columns in a two-column paper; same as
+    table in a one-column thesis) and the tabular is scaled to the line width.
+    """
     n_cols = len(df.columns)
     if col_format is None:
         col_format = 'l' + 'r' * (n_cols - 1)
+    env = 'table*' if wide else 'table'
+    tab_open = f'  \\begin{{tabular}}{{{col_format}}}'
+    tab_close = r'  \end{tabular}'
+    if wide:
+        tab_open = r'  \resizebox{\linewidth}{!}{%' + '\n' + tab_open
+        tab_close = tab_close + '%\n  }'
     lines = [
-        r'\begin{table}[htbp]',
+        f'\\begin{{{env}}}[htbp]',
         r'  \centering',
-        f'  \\caption{{{caption}}}',
+        f'  \\caption{{{latex_escape(caption)}}}',
         f'  \\label{{{label}}}',
         r'  \small',
-        f'  \\begin{{tabular}}{{{col_format}}}',
-        r'    \hline',
-        '    ' + ' & '.join(str(c) for c in df.columns) + r' \\',
-        r'    \hline',
+        tab_open,
+        r'    \toprule',
+        '    ' + ' & '.join(latex_escape(c) for c in df.columns) + r' \\',
+        r'    \midrule',
     ]
     for _, row in df.iterrows():
-        lines.append('    ' + ' & '.join(str(v) for v in row.values) + r' \\')
+        lines.append('    ' + ' & '.join(latex_escape(v) for v in row.values) + r' \\')
     lines += [
-        r'    \hline',
-        r'  \end{tabular}',
-        r'\end{table}',
+        r'    \bottomrule',
+        tab_close,
+        f'\\end{{{env}}}',
     ]
-    return '\n'.join(lines)
+    return '\n'.join(lines) + '\n'
 
 
-def save_table(df, name, caption, label):
+def save_table(df, name, caption, label, wide=False):
     csv_path = os.path.join(RESULTS_TABLES, f'{name}.csv')
     tex_path = os.path.join(RESULTS_TABLES, f'{name}.tex')
     df.to_csv(csv_path, index=False)
     with open(tex_path, 'w', encoding='utf-8') as f:
-        f.write(df_to_latex(df, caption, label))
+        f.write(df_to_latex(df, caption, label, wide=wide))
     print(f"  Saved: {csv_path}  +  {tex_path}")
 
 
@@ -291,7 +325,7 @@ if model_metrics:
         })
     t2 = pd.DataFrame(rows2)
     save_table(t2, 'table2_model_performance',
-               'Model Performance on NHANES 2017–2018 Test Set', 'tab:model_perf')
+               'Model Performance on NHANES 2017–2018 Test Set', 'tab:model_perf', wide=True)
 
 # --- Table 3: Reporting Gap Comparison ---
 print("\n  [Table 3] Reporting gap comparison")
@@ -341,7 +375,7 @@ for key in configs_8:
 t4 = pd.DataFrame(rows4)
 save_table(t4, 'table4_main_results',
            'Main Results: Explanation Equivalence N* Across All 8 Configurations',
-           'tab:main_results')
+           'tab:main_results', wide=True)
 
 # --- Table 5: Statistical Tests ---
 print("\n  [Table 5] Statistical tests")
@@ -372,18 +406,53 @@ for suffix in ['rf_shap', 'rf_lime', 'lr_shap', 'lr_lime']:
     if m_key in all_results and r_key in all_results:
         m_n = all_results[m_key]['summary']['nstar']
         r_n = all_results[r_key]['summary']['nstar']
+        m_res = all_results[m_key]['results']
+        r_res = all_results[r_key]['results']
+        m_b10 = float(np.mean([r['blind_reductions'][10] for r in m_res]))
+        r_b10 = float(np.mean([r['blind_reductions'][10] for r in r_res]))
+        r_exp = float(np.mean([r['explanation_reduction'] for r in r_res]))
         rows6.append({
-            'Config':                suffix.upper().replace('_', '+'),
-            'Model A (Measured) N*': round(m_n, 2),
-            'Model B (Reported) N*': round(r_n, 2),
-            'Difference (B-A)':      round(r_n - m_n, 2),
-            'B is more vulnerable':  '✓' if r_n > m_n else '✗',
+            'Config':                       suffix.upper().replace('_', '+'),
+            'Model A N*':                   round(m_n, 2),
+            'Model B N*':                   round(r_n, 2),
+            'A: reduction, 10 blind':       round(m_b10, 4),
+            'B: reduction, 1 explanation':  round(r_exp, 4),
+            'B: reduction, 10 blind':       round(r_b10, 4),
+            'B can be gamed':               '✓' if r_b10 > m_b10 else '✗',
         })
 if rows6:
     t6 = pd.DataFrame(rows6)
     save_table(t6, 'table6_model_ab_comparison',
                'Model A (Measured) vs Model B (Self-Reported): Vulnerability Comparison',
-               'tab:model_ab')
+               'tab:model_ab', wide=True)
+
+# --- Table 7: Score reductions and explanation outcomes ---
+print("\n  [Table 7] Score reductions")
+rows7 = []
+for key in configs_8:
+    if key not in all_results:
+        continue
+    res = all_results[key]['results']
+    exp_r = np.array([r['explanation_reduction'] for r in res])
+    parts = key.split('_')
+    rows7.append({
+        'Input':               '_'.join(parts[:-2]).capitalize(),
+        'Model':               parts[-2].upper(),
+        'Expl.':               parts[-1].upper(),
+        '1 explanation':       round(float(exp_r.mean()), 4),
+        '1 blind':             round(float(np.mean([r['blind_reductions'][1] for r in res])), 4),
+        '10 blind':            round(float(np.mean([r['blind_reductions'][10] for r in res])), 4),
+        '100 blind':           round(float(np.mean([r['blind_reductions'][100] for r in res])), 4),
+        '% no lie suggested':  f"{np.mean([r['explanation_feature'] is None for r in res]) * 100:.1f}%",
+        '% lie raised risk':   f"{np.mean(exp_r < 0) * 100:.1f}%",
+    })
+if rows7:
+    t7 = pd.DataFrame(rows7)
+    save_table(t7, 'table7_score_reductions',
+               'Mean risk-score reduction (0-1 scale): one explanation-guided lie vs. '
+               'the best of N blind lies, and how often the explanation suggested no lie '
+               'or a lie that raised the risk',
+               'tab:reductions', wide=True)
 
 print(f"\n  All tables saved to: {RESULTS_TABLES}")
 

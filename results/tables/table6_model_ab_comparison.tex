@@ -1,16 +1,18 @@
-\begin{table}[htbp]
+\begin{table*}[htbp]
   \centering
   \caption{Model A (Measured) vs Model B (Self-Reported): Vulnerability Comparison}
   \label{tab:model_ab}
   \small
-  \begin{tabular}{lrrrr}
-    \hline
-    Config & Model A (Measured) N* & Model B (Reported) N* & Difference (B-A) & B is more vulnerable \\
-    \hline
-    RF+SHAP & 0.0 & 0.0 & 0.0 & ✗ \\
-    RF+LIME & 0.0 & 0.0 & 0.0 & ✗ \\
-    LR+SHAP & 0.0 & 0.0 & 0.0 & ✗ \\
-    LR+LIME & 0.0 & 0.0 & 0.0 & ✗ \\
-    \hline
-  \end{tabular}
-\end{table}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    Config & Model A $N^*$ & Model B $N^*$ & A: reduction, 10 blind & B: reduction, 1 explanation & B: reduction, 10 blind & B can be gamed \\
+    \midrule
+    RF+SHAP & 0.0 & 0.0 & 0.0 & 0.0129 & 0.0638 & Yes \\
+    RF+LIME & 0.0 & 0.0 & 0.0 & 0.0117 & 0.0638 & Yes \\
+    LR+SHAP & 0.0 & 0.0 & 0.0 & 0.0176 & 0.0457 & Yes \\
+    LR+LIME & 0.0 & 0.0 & 0.0 & 0.0223 & 0.0457 & Yes \\
+    \bottomrule
+  \end{tabular}%
+  }
+\end{table*}

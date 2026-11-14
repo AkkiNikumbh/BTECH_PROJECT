@@ -1,0 +1,9 @@
+Input,Model,Expl.,1 explanation,1 blind,10 blind,100 blind,% no lie suggested,% lie raised risk
+Reported,RF,SHAP,0.0129,0.024,0.0638,0.0785,19.3%,23.0%
+Reported,RF,LIME,0.0117,0.024,0.0638,0.0785,3.3%,31.1%
+Reported,LR,SHAP,0.0176,0.0248,0.0457,0.0525,31.1%,0.0%
+Reported,LR,LIME,0.0223,0.0248,0.0457,0.0525,7.7%,0.0%
+Measured,RF,SHAP,0.0,0.0,0.0,0.0,100.0%,0.0%
+Measured,RF,LIME,0.0,0.0,0.0,0.0,100.0%,0.0%
+Measured,LR,SHAP,0.0,0.0,0.0,0.0,100.0%,0.0%
+Measured,LR,LIME,0.0,0.0,0.0,0.0,100.0%,0.0%

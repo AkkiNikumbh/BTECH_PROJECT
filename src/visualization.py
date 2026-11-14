@@ -345,47 +345,65 @@ def fig3_score_reduction_boxplot(all_results, save_path=None):
     plt.close()
 
 
+def _mean_reductions(results, n=None):
+    """Mean explanation reduction, or mean best blind reduction after n attempts."""
+    if n is None:
+        return float(np.mean([r['explanation_reduction'] for r in results]))
+    return float(np.mean([r['blind_reductions'][n] for r in results]))
+
+
 def fig4_model_ab_comparison(all_results, save_path=None):
     """
-    Fig 4 — Model A (measured) vs Model B (self-reported) vulnerability.
-    Grouped bar chart.
+    Fig 4 — Model A (measured) vs Model B (self-reported): how much can the
+    risk score be lowered? (Mean score reduction, not N*: Model A cannot be
+    attacked at all, so N* is 0 for both and hides the difference.)
+    For each config: 1 explanation, 1 blind attempt, 10 blind attempts,
+    for Model A and Model B.
     """
-    configs, measured_vals, reported_vals = [], [], []
-    for suffix in ['rf_shap', 'rf_lime', 'lr_shap', 'lr_lime']:
-        m_key = f'measured_{suffix}'
-        r_key = f'reported_{suffix}'
+    suffixes = ['rf_shap', 'rf_lime', 'lr_shap', 'lr_lime']
+    configs, rows = [], []
+    for suffix in suffixes:
+        m_key, r_key = f'measured_{suffix}', f'reported_{suffix}'
         if m_key in all_results and r_key in all_results:
             configs.append(suffix.upper().replace('_', '+'))
-            measured_vals.append(all_results[m_key]['summary']['nstar'])
-            reported_vals.append(all_results[r_key]['summary']['nstar'])
-
+            m_res, r_res = all_results[m_key]['results'], all_results[r_key]['results']
+            rows.append([
+                _mean_reductions(m_res, 10),     # Model A, best of 10 blind
+                _mean_reductions(r_res),         # Model B, 1 explanation
+                _mean_reductions(r_res, 1),      # Model B, 1 blind
+                _mean_reductions(r_res, 10),     # Model B, best of 10 blind
+            ])
     if not configs:
         return
 
+    rows = np.array(rows)
+    series = [
+        ('Model A (measured) — any strategy', COLORS['measured']),
+        ('Model B (self-reported) — 1 explanation', COLORS['explanation']),
+        ('Model B — 1 blind attempt', '#85C1E9'),
+        ('Model B — best of 10 blind attempts', COLORS['blind']),
+    ]
     x = np.arange(len(configs))
-    width = 0.35
+    width = 0.2
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    bars1 = ax.bar(x - width/2, measured_vals, width,
-                   label='Model A (Measured inputs)', color=COLORS['measured'], alpha=0.85)
-    bars2 = ax.bar(x + width/2, reported_vals, width,
-                   label='Model B (Self-reported inputs)', color=COLORS['reported'], alpha=0.85)
-
-    for bar in list(bars1) + list(bars2):
-        h = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., h + 0.1,
-                f'{h:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+    fig, ax = plt.subplots(figsize=(11, 6))
+    for k, (label, color) in enumerate(series):
+        bars = ax.bar(x + (k - 1.5) * width, rows[:, k], width,
+                      label=label, color=color, alpha=0.9)
+        for bar in bars:
+            h = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2., h + 0.001,
+                    f'{h:.3f}', ha='center', va='bottom', fontsize=8)
 
     ax.set_xlabel('Configuration', fontsize=12)
-    ax.set_ylabel('Mean Equivalence (N*)', fontsize=12)
-    ax.set_title('Fig 4: Model A vs Model B — Does Input Verification Reduce Gaming Risk?',
+    ax.set_ylabel('Mean risk-score reduction (0–1 scale)', fontsize=12)
+    ax.set_title('Fig 4: Model A vs Model B — How Much Can the Risk Score Be Lowered?',
                  fontweight='bold')
     ax.set_xticks(x)
     ax.set_xticklabels(configs)
-    ax.legend(fontsize=11)
+    ax.legend(fontsize=9, loc='upper right')
     ax.grid(True, alpha=0.2, axis='y')
-    ax.axhline(y=10, color='gray', linewidth=1, linestyle=':', alpha=0.6,
-               label='N*=10 reference')
+    ax.set_ylim(0, max(rows.max() * 1.25, 0.01))
 
     plt.tight_layout()
     if save_path:
@@ -397,51 +415,42 @@ def fig4_model_ab_comparison(all_results, save_path=None):
 
 def fig5_shap_lime_scatter(all_results, save_path=None):
     """
-    Fig 5 — SHAP vs LIME Agreement Scatter.
-    Each point = one model+input config.
+    Fig 5 — SHAP vs LIME agreement, per patient.
+    Each point = one patient (Model B): score reduction from the
+    SHAP-guided lie vs the LIME-guided lie. Same patients, same lie sizes
+    (per-patient seeds), so differences come from the explanation only.
     """
-    pairs = []
-    for prefix in ['reported_rf', 'reported_lr', 'measured_rf', 'measured_lr']:
-        k_shap = f'{prefix}_shap'
-        k_lime = f'{prefix}_lime'
-        if k_shap in all_results and k_lime in all_results:
-            pairs.append((
-                all_results[k_shap]['summary']['nstar'],
-                all_results[k_lime]['summary']['nstar'],
-                prefix,
-            ))
-
-    if not pairs:
+    panels = [p for p in ['reported_rf', 'reported_lr']
+              if f'{p}_shap' in all_results and f'{p}_lime' in all_results]
+    if not panels:
         return
 
-    shap_vals = [p[0] for p in pairs]
-    lime_vals = [p[1] for p in pairs]
-    labels    = [p[2].replace('_', '\n') for p in pairs]
+    fig, axes = plt.subplots(1, len(panels), figsize=(6.5 * len(panels), 6.2),
+                             squeeze=False)
+    for ax, prefix in zip(axes[0], panels):
+        s = np.array([r['explanation_reduction'] for r in all_results[f'{prefix}_shap']['results']])
+        l = np.array([r['explanation_reduction'] for r in all_results[f'{prefix}_lime']['results']])
+        ax.scatter(s, l, s=12, alpha=0.45, color=COLORS['shap'], edgecolors='none')
+        lo = min(s.min(), l.min(), 0) * 1.05
+        hi = max(s.max(), l.max(), 0.01) * 1.05
+        ax.plot([lo, hi], [lo, hi], 'k--', linewidth=1, alpha=0.5, label='SHAP = LIME')
+        ax.axhline(0, color='gray', linewidth=0.8, alpha=0.6)
+        ax.axvline(0, color='gray', linewidth=0.8, alpha=0.6)
+        ax.set_xlim(lo, hi)
+        ax.set_ylim(lo, hi)
+        same = float(np.mean(np.isclose(s, l))) * 100
+        r = float(np.corrcoef(s, l)[0, 1]) if np.std(s) > 0 and np.std(l) > 0 else float('nan')
+        model = 'Random Forest' if prefix.endswith('rf') else 'Logistic Regression'
+        ax.set_title(f'Model B + {model}\n'
+                     f'r = {r:.2f}; identical outcome for {same:.0f}% of patients',
+                     fontweight='bold', fontsize=12)
+        ax.set_xlabel('Score reduction, SHAP-guided lie', fontsize=11)
+        ax.set_ylabel('Score reduction, LIME-guided lie', fontsize=11)
+        ax.grid(True, alpha=0.2)
+        ax.legend(fontsize=9, loc='upper left')
 
-    fig, ax = plt.subplots(figsize=(7, 7))
-    colors_pt = [COLORS['measured'] if 'measured' in p[2] else COLORS['reported']
-                 for p in pairs]
-
-    for x, y, lbl, c in zip(shap_vals, lime_vals, labels, colors_pt):
-        ax.scatter(x, y, color=c, s=220, zorder=5, edgecolors='white', linewidth=1.5)
-        ax.annotate(lbl, (x, y), textcoords='offset points',
-                    xytext=(8, 4), fontsize=9)
-
-    max_val = max(max(shap_vals, default=1), max(lime_vals, default=1)) * 1.2 or 2
-    ax.plot([0, max_val], [0, max_val], 'k--', linewidth=1, alpha=0.4)
-    ax.set_xlim(0, max_val)
-    ax.set_ylim(0, max_val)
-    ax.set_xlabel('SHAP Equivalence (Mean N*)', fontsize=12)
-    ax.set_ylabel('LIME Equivalence (Mean N*)', fontsize=12)
-    ax.set_title('Fig 5: SHAP vs LIME Agreement\n(diagonal = identical)', fontweight='bold')
-    ax.grid(True, alpha=0.2)
-
-    from matplotlib.patches import Patch
-    ax.legend(handles=[
-        Patch(facecolor=COLORS['reported'], label='Model B (Self-Reported)'),
-        Patch(facecolor=COLORS['measured'], label='Model A (Measured)'),
-    ], fontsize=10)
-
+    fig.suptitle('Fig 5: SHAP vs LIME Agreement (per patient, 2017–2018 test set)',
+                 fontweight='bold', fontsize=14)
     plt.tight_layout()
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -499,8 +508,10 @@ def fig7_equivalence_histogram(all_results, save_path=None):
 
 def fig8_heatmap_configurations(all_results, save_path=None):
     """
-    Fig 8 — Heatmap of all 8 configurations.
-    Cell = Mean N*. Quick visual scan of all results.
+    Fig 8 — Overview of all 8 configurations.
+    Cell colour = mean risk-score reduction from ONE explanation-guided lie;
+    the text also shows one blind attempt and the primary N*.
+    (Colouring by N* alone would show an all-zero grid.)
     """
     row_keys   = ['reported_rf', 'reported_lr', 'measured_rf', 'measured_lr']
     row_labels = ['Reported + RF', 'Reported + LR', 'Measured + RF', 'Measured + LR']
@@ -508,38 +519,42 @@ def fig8_heatmap_configurations(all_results, save_path=None):
     col_labels = ['SHAP', 'LIME']
 
     matrix = np.full((len(row_keys), len(col_keys)), np.nan)
+    blind1 = np.full_like(matrix, np.nan)
+    nstar  = np.full_like(matrix, np.nan)
     for i, rk in enumerate(row_keys):
         for j, ck in enumerate(col_keys):
             key = f'{rk}_{ck}'
             if key in all_results:
-                matrix[i, j] = all_results[key]['summary']['nstar']
+                res = all_results[key]['results']
+                matrix[i, j] = _mean_reductions(res)
+                blind1[i, j] = _mean_reductions(res, 1)
+                nstar[i, j]  = all_results[key]['summary']['nstar']
 
     if np.all(np.isnan(matrix)):
         return
 
-    fig, ax = plt.subplots(figsize=(7, 5))
-    valid_vals = matrix[~np.isnan(matrix)]
-    im = ax.imshow(matrix, cmap='YlOrRd', aspect='auto',
-                   vmin=0, vmax=valid_vals.max() if len(valid_vals) else 1)
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+    vmax = max(np.nanmax(matrix), np.nanmax(blind1), 1e-6)
+    im = ax.imshow(matrix, cmap='YlOrRd', aspect='auto', vmin=0, vmax=vmax)
 
     ax.set_xticks(range(len(col_labels)))
     ax.set_xticklabels(col_labels, fontsize=13)
     ax.set_yticks(range(len(row_labels)))
     ax.set_yticklabels(row_labels, fontsize=12)
 
-    mid = valid_vals.mean() if len(valid_vals) else 0.5
     for i in range(len(row_keys)):
         for j in range(len(col_keys)):
-            val = matrix[i, j]
-            if not np.isnan(val):
-                txt_color = 'white' if val > mid else 'black'
-                ax.text(j, i, f'{val:.1f}', ha='center', va='center',
-                        fontsize=14, fontweight='bold', color=txt_color)
+            if not np.isnan(matrix[i, j]):
+                txt_color = 'white' if matrix[i, j] > 0.6 * vmax else 'black'
+                ax.text(j, i,
+                        f'explanation {matrix[i, j]:.4f}\n'
+                        f'1 blind try {blind1[i, j]:.4f}\n'
+                        f'N* = {nstar[i, j]:.1f}',
+                        ha='center', va='center', fontsize=10, color=txt_color)
 
     cbar = plt.colorbar(im, ax=ax, shrink=0.8)
-    cbar.set_label('Mean N* (blind attempt equivalents)', fontsize=10)
-    ax.set_title('Fig 8: N* Heatmap — All 8 Configurations\n'
-                 '(higher = explanation more valuable to adversary)',
+    cbar.set_label('Mean score reduction from 1 explanation', fontsize=10)
+    ax.set_title('Fig 8: All 8 Configurations — one explanation vs one blind attempt',
                  fontweight='bold')
 
     plt.tight_layout()

@@ -6,6 +6,10 @@
 %
 % Target venue: FAccT 2028 / AIES 2028
 % Template: ACM Conference Proceedings
+%
+% Numbers in this file come from the v3 re-run (results/tables/*).
+% Build from the paper/ folder:
+%   pdflatex main && bibtex main && pdflatex main && pdflatex main
 % ============================================================
 
 \documentclass[sigconf,nonacm]{acmart}
@@ -16,12 +20,10 @@
 \usepackage{graphicx}       % figures
 \usepackage{subcaption}     % subfigures
 \usepackage{amsmath}        % math
-\usepackage{amssymb}
-\usepackage{hyperref}       % clickable refs (disable for camera-ready)
-\usepackage{cleveref}       % \cref
 \usepackage{xcolor}
 \usepackage{multirow}
 \usepackage{array}
+\usepackage{cleveref}       % \cref (acmart already loads hyperref)
 
 % ---- Metadata ------------------------------------------------
 \title{Can an AI Explanation Be Misused? Testing Whether SHAP and LIME
@@ -51,34 +53,37 @@
 }
 \email{akshat@dtu.ac.in}
 
+% ============================================================
+\begin{document}
+
 % ---- Abstract -----------------------------------------------
 \begin{abstract}
 Explainable AI (XAI) methods such as SHAP and LIME are increasingly
 required by regulation to accompany machine learning predictions in
 healthcare. A concern is that feature attributions may also serve as
-instructions for gaming the model---telling a patient exactly which
-self-reported inputs to adjust for a better risk score. However, a
-determined adversary can also simply query the model repeatedly with
-different inputs and observe the score change. We compare these two
-adversarial strategies on a diabetes risk model trained on NHANES
-public health survey data, constraining the adversary's permissible
-lies to magnitudes observed in real self-reporting behaviour. We train
-four models---two algorithms (Random Forest, Logistic Regression)
-$\times$ two input variants (nurse-measured vs.\ self-reported
-height/weight)---and measure how many blind trial-and-error attempts
-equal one explanation in terms of achieved score reduction: the
-\emph{explanation equivalence} $N^*$. Our pre-registered experiment on
-the held-out 2017--2018 NHANES cycle finds that one SHAP explanation is
-equivalent to approximately $N^*$ blind attempts [95\% CI: $L$--$H$],
-suggesting that explanations provide only a \textbf{[small/moderate]}
-additional advantage over informed trial-and-error. Crucially, for the
-majority of patients the explanation provides zero benefit over a single
-random query, implying that withholding XAI explanations is not an
-effective safeguard---verifying patient-reported inputs is more
-impactful. We release our code and pre-registered analysis plan.
-
-\textbf{Note:} Values in brackets [$N^*$, $L$, $H$] will be filled
-with final experiment results from Stage 7.
+instructions for gaming the model---telling a patient which
+self-reported inputs to change for a better risk score---so that
+explanations should be withheld. But a patient can also simply try
+different answers and watch the score move. We compare these two
+strategies on a diabetes risk model trained on NHANES public health
+survey data, where height and weight are recorded both as
+self-reported and as measured by a nurse while the diabetes label
+comes from a blood test (HbA1c). Lies are restricted to the size and
+direction of real self-reporting errors observed in NHANES. We train
+four models---Random Forest and Logistic Regression, each with
+nurse-measured or self-reported height/weight---and measure the
+\emph{explanation equivalence} $N^*$: how many blind attempts give the
+same mean score reduction as one explanation-guided lie. In our
+pre-registered evaluation on the held-out 2017--2018 NHANES cycle
+($n=887$ test patients), $N^* = 0.0$ (95\% CI 0.0--0.0) in all eight
+configurations: one explanation-guided lie lowers the risk score
+\emph{less} on average than one random realistic lie (e.g.\ 0.013 vs.\
+0.024 for Random Forest with SHAP). Explanations often point the
+patient away from a profitable lie, or, for the Random Forest, towards
+a lie that raises the score. The model that uses nurse-measured inputs
+cannot be gamed at all. Withholding explanations is therefore not an
+effective safeguard; verifying self-reported inputs is.
+We release our code, data pipeline, and pre-registered analysis plan.
 \end{abstract}
 
 % ---- CCS Concepts / Keywords --------------------------------
@@ -117,387 +122,438 @@ developers to provide explanations alongside predictions
 might inform a patient: ``Your risk score is 0.72. Your weight is the
 most important contributing factor.''
 
-% --- TODO (Akash Singh, Week 2) ----------------------------
-% 1.5 pages. Cover:
-%   - The dual-use tension: transparency ↔ gaming
-%   - Concrete example: patient adjusts self-report after seeing explanation
-%   - Prior work gap: gaming studied for images/text, not for clinical
-%     self-report bias models
-%   - Our contribution (4 bullets)
-%   - Paper roadmap (1 paragraph)
-
 This transparency creates a potential dual-use risk: the same
 explanation that helps a clinician understand the model may help a
 patient \emph{game} it by adjusting what they self-report.  A patient
 told that weight is the top risk factor might under-report their weight
-at the next visit.
+at the next visit.  If explanations act as instructions for cheating,
+one response is to hide them.
 
 \paragraph{Our Question.}
-Does a SHAP or LIME explanation give a patient a meaningful advantage
-over simply trying different inputs until the score improves---i.e.,
-blind trial-and-error?  If explanations provide only a small advantage,
-restricting them is not an effective safeguard.  If they provide a
-large advantage, the benefit of transparency must be weighed against
-the gaming risk.
+A patient does not need an explanation to game a model: they can try
+a few different answers and keep the one with the best score.  The
+relevant question is therefore not whether an explanation helps at
+all, but whether it helps \emph{more than ordinary trial-and-error}.
+If explanations add little over a few blind attempts, restricting them
+is not an effective safeguard.  If they add a lot, the benefit of
+transparency must be weighed against the gaming risk.
 
 \paragraph{Contributions.}
 \begin{enumerate}
   \item We introduce \emph{explanation equivalence} ($N^*$): the
-        number of blind attempts required to achieve the same score
-        reduction as one explanation.
-  \item We operationalise a realistic \emph{lie budget} from real
-        NHANES self-reporting data, bounding the adversary's
-        permissible misreporting magnitudes.
-  \item We conduct the first \emph{pre-registered} adversarial
-        evaluation of SHAP and LIME on a real clinical dataset,
-        preventing p-hacking and HARKing.
-  \item We provide actionable policy conclusions: whether restricting
-        explanations is an effective safeguard.
+        number of blind attempts required to achieve the same mean
+        score reduction as one explanation-guided attempt.
+  \item We bound the adversary's lies by \emph{real} self-reporting
+        behaviour: NHANES records both self-reported and
+        nurse-measured height and weight, so we take the size and
+        direction of a realistic lie from the observed gap.
+  \item We train two models that differ \emph{only} in whether
+        height/weight are self-reported or measured, isolating the
+        effect of input verification.
+  \item We conduct a \emph{pre-registered} evaluation of SHAP and LIME
+        on held-out data and find that, under realistic lies, one
+        explanation is worth fewer than one blind attempt
+        ($N^*=0$ in all configurations).
 \end{enumerate}
 
 % ============================================================
 \section{Related Work}
 % ============================================================
 
-% --- TODO (Akash Singh, Week 2) ----------------------------
-% 1.5 pages. Cite and position:
-%   [1] Ribeiro et al. LIME (2016)
-%   [2] Lundberg & Lee SHAP (2017)
-%   [3] Adadi & Berrada XAI survey (2018)
-%   [4] Shokri et al. privacy in XAI (AIES 2021)
-%   [5] Ghalme et al. strategic classification (ICML 2021)
-%   [6] Slack et al. fooling LIME/SHAP (AAIS 2020)
-%   [7] Goodman & Flaxman GDPR (2017)
-%   [8] Wachter et al. counterfactual explanations (2017)
-%   [9] Johnson et al. NHANES data (2014)
-% Distinguish: our work tests gaming, not model-level attacks.
-% Distinguish: our lie budget comes from real human misreport data.
-
 \paragraph{Explainability Methods.}
 Local explanation methods such as LIME~\cite{ribeiro2016lime} and
 SHAP~\cite{lundberg2017shap} produce feature attributions that
 identify the most important inputs for a given prediction.  These
 methods are increasingly embedded in clinical decision support
-systems~\cite{adadi2018peeking}.
+systems~\cite{adadi2018peeking}.  Explanations can look convincing
+yet be disconnected from the model~\cite{adebayo2018sanity}, and
+Bilodeau et al.~\cite{bilodeau2024impossibility} proved that for
+broad model classes feature attributions can do no better than random
+guessing at predicting how the model responds to a change in its
+input---showing that a problem is possible, but not how large it is
+in practice.
 
 \paragraph{Adversarial XAI.}
 Slack et al.~\cite{slack2020fooling} demonstrated that SHAP and LIME
 can be manipulated at the \emph{model} level to produce misleading
-explanations.  Our work is complementary: we study gaming at the
-\emph{user} level, asking whether an honest model's explanations help
-a user game their score.
+explanations, and Bordt et al.~\cite{bordt2022posthoc} argue that
+post-hoc explanations suit legal transparency rules poorly because
+providers can manipulate them.  Our work is complementary: we study
+gaming at the \emph{user} level, asking whether an honest model's
+explanations help a user game their score.  Milli et
+al.~\cite{milli2019model} showed that a few explanation queries can
+replace many ordinary queries for reconstructing a model, and Shokri
+et al.~\cite{shokri2021privacy} showed that explanations can leak
+private training data; both concern the model or its data rather than
+a patient changing their own answers.
 
-Shokri et al.~\cite{shokri2021privacy} showed that explanations can
-leak private training data.  Ghalme et al.~\cite{ghalme2021strategic}
-studied strategic classification where agents best-respond to a known
-model; we study the more realistic setting where the model is a black
-box and the lie budget is bounded by real human behaviour.
+\paragraph{Strategic Classification.}
+Ghalme et al.~\cite{ghalme2021strategic} found that hiding the
+decision rule usually does not help the decision-maker, and Hikri and
+Rosenfeld~\cite{hikri2026ambiguous} extended this to partial
+disclosure.  K\"{o}nig et al.~\cite{konig2023improvement} note that advice
+can improve a prediction without improving the person, just as lying
+about weight is not losing weight.  Unlike these works, we bound
+manipulation by real human misreporting and compare explanations
+against an equal-cost blind baseline.
 
 \paragraph{Self-Reporting Bias.}
 NHANES~\cite{johnson2014national} systematically collects both
 self-reported and nurse-measured anthropometrics, enabling a direct
-empirical measurement of the lie budget.
+empirical measurement of how people misreport.
 
 % ============================================================
 \section{Problem Setup}
 % ============================================================
 
-% --- TODO (Aditya Jha, Week 2) ----------------------------
-% 1 page. Formal definitions:
-%   - Model f: X → [0,1], diabetes risk score
-%   - Gameable features G ⊂ X (self_height_cm, self_weight_kg)
-%   - Lie budget B(g) = max permissible |x_g' - x_g|
-%   - Strategy 1: explanation-guided attack
-%   - Strategy 2: blind trial-and-error
-%   - Equivalence metric N*
-%   - Threat model
-
 \subsection{Threat Model}
 
-We model an adversary who:
+We model an adversary (patient) who:
 \begin{itemize}
   \item Receives a diabetes risk score $f(\mathbf{x}) \in [0,1]$ from
-        a clinical AI system.
-  \item Can modify self-reported features $G = \{\text{height},
-        \text{weight}\}$ by at most $B(g)$ (the \emph{lie budget}).
-  \item Wishes to minimise their score while staying within the lie
-        budget (i.e., the misreport is plausible).
-  \item May or may not receive a SHAP/LIME explanation.
+        a clinical AI system and wishes to lower it.
+  \item Can change only \emph{self-reported} features
+        $G = \{\text{height}, \text{weight}\}$; nurse-measured values
+        and lab results cannot be changed.
+  \item Lies only \emph{realistically}: in the direction people
+        actually misreport, by at most the lie budget $B(g)$.
+  \item Either receives one SHAP/LIME explanation, or receives none
+        and makes $N$ blind attempts, keeping the best score.
 \end{itemize}
 
-\subsection{Lie Budget}
+\subsection{Realistic Lies}
 
-The lie budget is derived empirically from NHANES: for each gameable
-feature $g$, we compute $B(g) = \text{Percentile}_{95}(|x_g^{\text{self}}
-- x_g^{\text{measured}}|)$ using the 2015--2016 development cycle.
-This gives $B(\text{height}) = 7.29\,\text{cm}$ and
-$B(\text{weight}) = 8.96\,\text{kg}$.
+For each gameable feature $g$, the lie budget is
+$B(g) = \text{Percentile}_{95}(|x_g^{\text{self}} - x_g^{\text{measured}}|)$,
+computed on the 2015--2016 development cycle:
+$B(\text{height}) = 7.28\,\text{cm}$ and
+$B(\text{weight}) = 8.96\,\text{kg}$.  People over-report height
+(mean $+1.62$\,cm) and under-report weight (mean $-0.87$\,kg), so a
+realistic lie \emph{increases} height or \emph{decreases} weight.
+Each lie has a size drawn uniformly from $(0, B(g)]$; the same rule is
+used by both strategies, so the explanation contributes only
+\emph{information} (which feature, which direction), never a larger lie.
 
 \subsection{Explanation Equivalence}
 
 \begin{definition}[Explanation Equivalence $N^*$]
-Let $R_{\text{exp}}$ be the mean score reduction achieved by the
-explanation-guided strategy.  Let $R_{\text{blind}}(N)$ be the mean
-score reduction achieved by the blind strategy with $N$ attempts.
-The \emph{explanation equivalence} is:
+Let $R_{\text{exp}}$ be the score reduction from one
+explanation-guided lie, averaged over patients, and let
+$R_{\text{blind}}(N)$ be the reduction from the best of $N$ blind
+lies, averaged over patients.  The \emph{explanation equivalence} is
 \[
-  N^* = \inf \{ N \geq 0 : R_{\text{blind}}(N) \geq R_{\text{exp}} \}
+  N^* = \inf \{ N \geq 0 : R_{\text{blind}}(N) \geq R_{\text{exp}} \},
 \]
-estimated by linear interpolation on the curve
-$N \mapsto R_{\text{blind}}(N)$.
+estimated by linear interpolation on
+$N \mapsto R_{\text{blind}}(N)$, $N \in \{1,2,3,5,10,15,20,30,50,100\}$.
+$N^*=0$ if one explanation does no better than a single blind
+attempt; $N^*=101$ if it beats 100 attempts (censored).
 \end{definition}
+
+This is the pre-registered primary metric: the average is taken over
+patients \emph{before} interpolating.  As secondary metrics we also
+report the per-patient $N^*$ distribution.
 
 % ============================================================
 \section{Methodology}
 % ============================================================
 
-% --- TODO (Aditya Jha, Week 3) ----------------------------
-% 2 pages. Sub-sections:
-%   4.1 Dataset & preprocessing (NHANES, N=X patients, 12.4% diabetes)
-%   4.2 Models (RF, LR — hyperparameters from Table 2)
-%   4.3 Explanation methods (TreeSHAP, LIME config)
-%   4.4 Adversarial strategies (Algorithm 1 pseudocode)
-%   4.5 Statistical analysis (Wilcoxon, bootstrap CI)
-%   4.6 Pre-registration
-
 \subsection{Dataset}
 
-We use the NHANES public health survey~\cite{johnson2014national},
-which collects both nurse-measured and self-reported anthropometrics.
-We merge the demographic, examination, and laboratory components for
-the 2015--2016 (development) and 2017--2018 (held-out test) cycles.
-After retaining adults ($\geq$18 years) with complete records across
-all features, we obtain $N_{\text{dev}} = 3{,}534$ patients
-(2015--2016) and $N_{\text{test}} = 884$ patients (2017--2018),
-with diabetes prevalence (HbA1c $\geq 6.5\%$) of 14.2\% and
-13.6\%, respectively.
+We use the NHANES public health survey~\cite{johnson2014national} and
+merge the demographics (DEMO), body measures (BMX), weight history
+questionnaire (WHQ), glycohaemoglobin (GHB), blood pressure (BPX),
+smoking (SMQ), and physical activity (PAQ) files for the 2015--2016
+(development) and 2017--2018 (held-out test) cycles.  Refused and
+don't-know codes are removed per variable as in the NHANES codebooks.
+Retaining adults ($\geq$18 years) with complete records for both
+feature sets gives 4{,}889 participants in 2015--2016 (12.4\% with
+diabetes, HbA1c $\geq 6.5\%$~\cite{ada2023standards}) and 4{,}431 in
+2017--2018 (13.6\%).  Within each cycle we use a stratified 80/20
+split; the final evaluation uses the $n=887$ test patients of the
+2017--2018 cycle, which was not examined during development.
 
 \subsection{Models}
 
-We train two model types---Random Forest (RF, $n=100$ trees,
-$\text{max\_depth}=10$) and Logistic Regression (LR)---each in two
-variants: \emph{Model A} uses nurse-measured height/weight;
-\emph{Model B} uses self-reported values (see Table~\ref{tab:model_perf}).
-All hyperparameters were fixed before examining the held-out data
-(see Section~\ref{sec:preregistration}).
+Each model uses seven features: age, sex, systolic blood pressure,
+smoking (ever 100 cigarettes), vigorous recreational activity,
+height, and weight.  \emph{Model A} uses nurse-measured height/weight;
+\emph{Model B} uses the self-reported values; everything else is
+identical.  We train a Random Forest (RF; 100 trees, maximum depth 10)
+and a Logistic Regression (LR; standardised inputs) for each, with
+balanced class weights to account for the 13\% prevalence
+(\cref{tab:model_perf}).  On the 2017--2018 test set the models reach
+AUC 0.77--0.80 and recall 0.69--0.78; Models A and B perform almost
+identically.
+
+\input{../results/tables/table2_model_performance.tex}
+
+\subsection{Explanations}
+
+SHAP uses TreeExplainer for RF and LinearExplainer for LR (background:
+a seeded random sample of 100 training rows).  LIME uses its tabular
+explainer with 500 samples, its default discretisation of continuous
+features, and all seven features shown.
 
 \subsection{Adversarial Strategies}
 
 \paragraph{Strategy 1 (Explanation-Guided).}
-The adversary requests one SHAP or LIME explanation, identifies the
-most influential gameable feature, and adjusts it by $B(g)$ in the
-risk-reducing direction (Algorithm~1 in Supplementary).
+The patient requests one explanation and reads it the way it is
+presented: features ranked by importance, each pushing the risk up or
+down.  Going down the ranking, the patient takes the first gameable
+feature whose risk-lowering direction is a realistic lie (SHAP: lower
+a feature with positive attribution, raise one with negative
+attribution; LIME: leave a risk-raising bin, e.g.\ raise the feature
+if the explanation says ``\emph{weight $\le$ 62\,kg} raises risk'').
+If no realistic lie is suggested, the patient does not lie.  Otherwise
+they lie once, with a size drawn as in \S3.2.
 
 \paragraph{Strategy 2 (Blind Trial-and-Error).}
-The adversary makes $N$ sequential model queries, each with a
-uniformly random perturbation of a gameable feature within $B(g)$,
-keeping the best score found.  We evaluate $N \in \{1, 2, 3, 5, 10,
-15, 20, 30, 50, 100\}$.
+The patient makes $N$ sequential attempts.  Each picks a gameable
+feature at random and lies in its realistic direction with a size
+drawn as in \S3.2; the best score so far is kept.  The simulation runs
+once up to $N=100$ and records the running best at each milestone, so
+blind performance at large $N$ is not over-estimated.
 
-\paragraph{Key Design Choice.}
-The blind simulation is run \emph{once} up to $N_{\max}=100$,
-recording the running best at each milestone.  Running independent
-simulations per $N$ would over-estimate blind performance at large $N$
-and bias $N^*$ upward.
+Every patient has its own fixed random seed, so the SHAP and LIME
+strategies, and Models A and B, are compared against identical blind
+attempts.
 
 \subsection{Statistical Analysis}
 
-For each configuration we compute: (i) mean $N^*$ with 1000-iteration
-bootstrap 95\% confidence interval ($\alpha=0.95$); (ii) a paired Wilcoxon signed-rank test comparing
-per-patient explanation vs.\ blind reductions at $N=10$;
-(iii) Cohen's $d$ effect size.
+For each configuration we report $N^*$ with a 95\% CI from 1{,}000
+bootstrap resamples of patients; a one-sided paired Wilcoxon
+signed-rank test~\cite{wilcoxon1945individual} of the per-patient
+explanation reduction against the best of $N=10$ blind attempts
+($H_1$: explanation $>$ blind); and Cohen's $d$.  All models were
+implemented with scikit-learn~\cite{pedregosa2011sklearn}.
 
-\subsection{Pre-Registration}
+\subsection{Pre-Registration and Deviations}
 \label{sec:preregistration}
 
-The complete analysis plan---including all hypotheses, metric
-definitions, and expected results---was published at
-\url{https://github.com/GP109-DTU/btp} (git tag:
-\texttt{v0.1-preregistration}) before the held-out 2017--2018 data
-was processed.  All deviations from the plan are documented in a
-changelog.
+The analysis plan (hypotheses, metric, tests, interpretation
+thresholds) was recorded as the git tag \texttt{v0.1-preregistration}
+in the project repository before the 2017--2018 data was processed.
+Before the final run reported here, we corrected implementation errors
+so that the code matches that plan (primary $N^*$ computed from the
+averaged curve; the pre-registered 2015--2016 lie budget; only
+self-reported values gameable).  We also made six changes that
+\emph{deviate} from it: lies only in the realistic direction; the same
+lie-size rule for both strategies (previously the explanation always
+used the maximum lie); LIME showing all seven features (previously
+five); balanced class weights; a random SHAP background; and
+per-patient random seeds.  Each is a documented switch in the code
+and can be reverted for sensitivity analysis.
 
 % ============================================================
-\section{Experiments and Results}
+\section{Results}
 % ============================================================
-
-% --- TODO (Akshat Kumar, Week 3) ---------------------------
-% 2 pages. Sub-sections:
-%   5.1 Reporting gap (Table 3 + Fig 1)
-%   5.2 Model performance (Table 2)
-%   5.3 Main result: equivalence N* (Table 4 + Fig 2)
-%   5.4 Per-patient distribution (Fig 7)
-%   5.5 Model A vs Model B (Table 6 + Fig 4)
-%   5.6 SHAP vs LIME agreement (Fig 5)
-%   5.7 Statistical tests (Table 5)
 
 \subsection{Reporting Gap}
 
-Figure~\ref{fig:gaps} shows the distribution of self-reported minus
-nurse-measured values in the 2017--2018 holdout data.  On average,
-participants overestimate their height by $[X]$\,cm (SD $[Y]$) and
-underestimate their weight by $[X]$\,kg (SD $[Y]$), consistent with
-the 2015--2016 development data.  The 95th-percentile lie budgets are
-$B(\text{height}) = [X]\,\text{cm}$ and
-$B(\text{weight}) = [X]\,\text{kg}$.
+\Cref{fig:gaps} shows self-reported minus nurse-measured values.  In
+2017--2018, participants over-report height by $+1.69$\,cm on average
+(SD 3.23) and under-report weight by $-0.67$\,kg (SD 4.84), closely
+matching 2015--2016 ($+1.62$\,cm, SD 3.41; $-0.87$\,kg, SD 4.79).  The
+95th-percentile gap in 2017--2018 (6.88\,cm, 9.32\,kg) is within
+0.4\,cm and 0.4\,kg of the development budget we use.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{../results/figures/fig1_reporting_gaps.png}
-  \caption{Self-report vs. nurse-measured gap distributions
-           (NHANES 2017--2018). Dashed vertical lines indicate
-           means; shaded regions mark the 95th-percentile lie budget.}
+  \caption{Self-reported minus nurse-measured height and weight
+           (NHANES 2017--2018).  Height is over-reported and weight
+           under-reported.}
   \label{fig:gaps}
 \end{figure}
 
 \subsection{Main Result: Explanation Equivalence}
 
-Table~\ref{tab:main_results} and Figure~\ref{fig:main_result} show
-$N^*$ across all eight configurations.
+\Cref{tab:main_results} and \cref{fig:main_result} show that
+$N^* = 0.0$ (95\% CI 0.0--0.0) in all eight configurations.  For
+Model B, one explanation-guided lie lowers the risk score by
+0.012--0.022 on average, while a single blind attempt already lowers
+it by 0.024--0.025, and the best of 10 blind attempts by 0.046--0.064
+(\cref{tab:reductions}).  The trial run on 2015--2016 (200 patients)
+gave the same picture ($N^* = 0.0$ in seven configurations and 1.0
+for LR+LIME).
 
-\begin{table}[t]
-  \centering
-  \caption{Explanation equivalence $N^*$ across all configurations.
-           Values in brackets are 95\% bootstrap CIs.}
-  \label{tab:main_results}
-  % FILL: paste from results/tables/table4_main_results.csv after Stage 7
-  \input{../results/tables/table4_main_results.tex}
-\end{table}
+\input{../results/tables/table4_main_results.tex}
 
-\begin{figure}[t]
+\input{../results/tables/table7_score_reductions.tex}
+
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=\linewidth]{../results/figures/fig2_main_result.png}
-  \caption{Equivalence curves: mean blind score reduction (blue, with
-           95\% band) vs.\ explanation reduction (red dashed).
-           The crossing point marks $N^*$.}
+  \includegraphics[width=0.85\linewidth]{../results/figures/fig2_main_result.png}
+  \caption{Mean score reduction from the best of $N$ blind attempts
+           (blue) vs.\ one explanation-guided lie (red dashed), SHAP.
+           For Model B the explanation line lies below the first blind
+           attempt, so $N^*=0$.  Model A cannot be gamed.}
   \label{fig:main_result}
-\end{figure}
+\end{figure*}
+
+\subsection{Why the Explanation Does Not Help}
+
+Two mechanisms explain the result (\cref{tab:reductions}).
+\emph{First, the explanation often suggests no profitable lie.}  A
+feature attribution describes a feature's contribution relative to an
+average patient, not which change would lower the score.  For LR,
+SHAP gives $\beta_g (x_g - \mathbb{E}[x_g])$: a patient with
+below-average weight sees ``weight lowers your risk'' and is not
+pointed to weight, even though under-reporting weight would lower the
+score further.  For 31\% of patients (LR+SHAP) the explanation
+suggests no realistic lie at all; blind attempts lie anyway and, since
+realistic lies usually help, gain.  \emph{Second, for the Random
+Forest the suggested lie often backfires}: 23\% (SHAP) and 31\% (LIME)
+of explanation-guided lies \emph{raise} the score, because local
+attributions do not describe the model's response over the whole
+range of a lie.  This is the practical face of the impossibility
+result of Bilodeau et al.~\cite{bilodeau2024impossibility}.
 
 \subsection{Per-Patient Distribution}
 
-Figure~\ref{fig:hist} shows the distribution of per-patient $N^*$.
-For [X]\% of patients, the explanation provides no benefit over a
-single blind query ($N^* \leq 1$).  For [Y]\% of patients, the
-explanation is worth more than 10 blind attempts ($N^* \geq 10$).
+Per patient (\cref{fig:hist}), the explanation is no better than one
+blind attempt for 76.0\% of patients (RF+SHAP) and worth 10 or more
+attempts for 8.7\% (6.9\% beat all 100 attempts).  The per-patient mean
+$N^*$ (7.7 for RF+SHAP, 2.6 for LR+SHAP) is therefore driven by a
+small tail, while the average patient gains more from a single
+blind attempt than from the explanation.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{../results/figures/fig7_nstar_histogram.png}
-  \caption{Distribution of per-patient equivalence $N^*$
-           (reported RF + SHAP; $N=[X]$ patients).}
+  \caption{Distribution of per-patient $N^*$ (Model B, RF + SHAP;
+           $n=887$ patients).}
   \label{fig:hist}
 \end{figure}
 
 \subsection{Model A vs.\ Model B}
 
-Figure~\ref{fig:modelab} compares $N^*$ for models trained on
-nurse-measured (Model A) vs.\ self-reported (Model B) inputs.  [FILL
-interpretation after results].
+Model A, which uses nurse-measured height and weight, cannot be gamed:
+no strategy changes its score (\cref{fig:modelab}, \cref{tab:model_ab}).
+Model B, which differs only in using self-reported values, can be
+lowered by 0.046--0.064 with ten blind attempts and 0.053--0.079 with a
+hundred.  Both models have the same accuracy, so verifying the two
+self-reported inputs removes the vulnerability at no cost in
+performance.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/fig4_model_comparison.png}
+  \caption{Mean risk-score reduction for Model A (nurse-measured
+           inputs) and Model B (self-reported inputs).}
+  \label{fig:modelab}
+\end{figure}
+
+\input{../results/tables/table6_model_ab_comparison.tex}
 
 \subsection{SHAP vs.\ LIME Agreement}
 
-Figure~\ref{fig:scatter} shows $N^*_{\text{SHAP}}$ vs.\
-$N^*_{\text{LIME}}$ for each configuration.
-[FILL: close to diagonal = methods agree].
+Because each patient receives the same lie size under SHAP and LIME,
+differences come from the explanation alone (\cref{fig:scatter}).  The
+two methods lead to the same outcome for 53\% (RF) and 40\% (LR) of
+patients, with per-patient correlation $r = 0.60$ and $0.55$.  Both
+give $N^*=0$; LIME is slightly better than SHAP for LR (0.022 vs.\
+0.018) and slightly worse for RF (0.012 vs.\ 0.013).
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.85\linewidth]{../results/figures/fig5_shap_lime_scatter.png}
+  \caption{Per-patient score reduction from the SHAP-guided lie vs.\
+           the LIME-guided lie (Model B, 2017--2018 test set).}
+  \label{fig:scatter}
+\end{figure*}
 
 \subsection{Statistical Tests}
 
-Table~\ref{tab:stats} reports Wilcoxon $p$-values and Cohen's $d$
-for the comparison explanation vs.\ blind at $N=10$ across all
-configurations.  [FILL: $p < 0.05$ / not significant?].
+The pre-registered one-sided Wilcoxon test of explanation $>$ blind at
+$N=10$ is not significant in any configuration ($p = 1.0$;
+\cref{tab:stats}).  The effect sizes are large and \emph{negative}
+($d = -0.79$ to $-1.34$ for Model B): ten blind attempts lower the
+score clearly more than one explanation.
+
+\input{../results/tables/table5_statistical_tests.tex}
 
 % ============================================================
 \section{Discussion}
 % ============================================================
 
-% --- TODO (Akshat Kumar, Week 4) ---------------------------
-% 1 page. Sub-sections:
-%   6.1 Main takeaway: what N* means for policy
-%   6.2 If N* < 5: "restricting explanations is not the solution"
-%   6.3 If N* 5-20: "moderate risk, consider design countermeasures"
-%   6.4 If N* > 20: "explanations are powerful; anonymise or restrict"
-%   6.5 Limitations
-%   6.6 Recommendations for practitioners
-
 \subsection{Policy Implications}
 
-Based on our pre-registered interpretation guide:
-\begin{itemize}
-  \item \textbf{If $N^* < 5$}: Withholding explanations is not a
-        meaningful safeguard.  A patient who is motivated to game the
-        model can do so almost as effectively through blind
-        trial-and-error.  The benefit of transparency outweighs the
-        gaming risk.
-  \item \textbf{If $5 \leq N^* \leq 20$}: Explanations provide a
-        moderate gaming advantage.  Design-level countermeasures---such
-        as rate-limiting queries or adding perturbation noise---are
-        worth considering.
-  \item \textbf{If $N^* > 20$}: Explanations are powerful attack
-        vectors.  Restricting or anonymising explanations may be
-        warranted; input verification (e.g., nurse measurement) is the
-        more robust safeguard.
-\end{itemize}
+Our pre-registered interpretation guide set three bands: $N^*<5$
+(withholding explanations is not a meaningful safeguard),
+$5 \le N^* \le 20$ (moderate advantage), and $N^*>20$ (explanations are
+powerful attack vectors).  With $N^* = 0$ in every configuration, the
+result falls in the first band.  Under realistic lies, an explanation
+does not give a patient a better route to a lower score than simply
+trying an answer; withholding it would remove information from honest
+users while barely slowing a motivated one.  The vulnerability lies
+in the self-reported inputs: the measured-input model cannot be gamed,
+and the two models are equally accurate.
 
-Our result of $N^* \approx 12.4$ falls in the \textbf{moderate threat}
-category ($5 \leq N^* \leq 20$), suggesting that explanations confer
-a meaningful but bounded gaming advantage. For the majority of patients
-(63.8\%), however, the explanation provides no benefit over a single
-blind query.
+This conclusion runs against the intuition that explanations are
+``instructions for cheating''.  The reason is that a feature
+attribution answers ``what contributed to this score?'', not ``what
+should I change?'', and the two can point in different directions.
 
 \subsection{Limitations}
 
 \begin{itemize}
-  \item \textbf{Single domain.} Our study is limited to diabetes risk
-        from anthropometric self-report. Results may differ for other
-        clinical domains or feature types.
-  \item \textbf{Single-feature attack.} We model an adversary who
-        changes one feature optimally (explanation-guided) or randomly
-        (blind). Multi-feature attacks could be more powerful.
-  \item \textbf{Static model.} We assume the model does not adapt to
-        gaming attempts. Adversarially robust training is a complementary
-        defence.
-  \item \textbf{Lie budget from observational data.} The 95th-percentile
-        gap captures what people \emph{actually} misreport, not the
-        maximum they \emph{could} misreport.
+  \item \textbf{Model of the patient.} We model one way of reading an
+        explanation (follow the top realistic suggestion once).  A
+        more sophisticated reader, or a counterfactual explanation,
+        could extract more.
+  \item \textbf{Single lie, single feature.} Each explanation-guided
+        attempt changes one feature once; multi-feature lies could be
+        more powerful for both strategies.
+  \item \textbf{Lie model.} Lie size is uniform within the
+        95th-percentile gap and in the observed direction.  Using the
+        maximum lie, or allowing either direction, is a one-line change
+        in our code; we leave that sensitivity analysis to future work.
+  \item \textbf{Single domain and dataset.} Results are for diabetes
+        risk from anthropometric self-report in NHANES.
+  \item \textbf{Pre-registration and deviations.} The plan was
+        recorded as a git tag in the project repository rather than an
+        independent registry, and six settings deviate from it
+        (\cref{sec:preregistration}).
 \end{itemize}
 
 \subsection{Recommendations for Practitioners}
 
 \begin{enumerate}
-  \item Prefer \textbf{verified inputs} (nurse measurement) over
-        self-report for high-stakes predictions.
-  \item If explanations must be shown, \textbf{rate-limit queries}
-        to raise the cost of blind trial-and-error.
-  \item Audit models for gaming vulnerability before deployment using
-        the $N^*$ framework introduced here.
-  \item Pre-register your evaluation plan to build trust in empirical
-        findings.
+  \item Prefer \textbf{verified inputs} (e.g.\ nurse measurement) over
+        self-report for the features that drive high-stakes predictions.
+  \item Do not withhold explanations as an anti-gaming measure; audit
+        the gain they give with the $N^*$ framework.
+  \item Be aware that attributions are not advice: present them as
+        ``contributions'' rather than ``what to change''.
 \end{enumerate}
 
 % ============================================================
 \section{Conclusion}
 % ============================================================
 
-% --- TODO (Akash Singh, Week 4) ---------------------------
-% 0.5 page: summarise, state N*, restate policy conclusion, future work
-
 We introduced the \emph{explanation equivalence} metric $N^*$ and
-applied it to a diabetes risk model using real NHANES survey data.
-Our pre-registered experiment on held-out 2017--2018 data shows that
-one SHAP explanation is equivalent to approximately $N^*=12.4$ blind
-attempts (95\% CI: 10.5--14.5). This quantifies, for the first time in
-a realistic clinical setting, the gaming advantage conferred by an XAI
-explanation.
-
-Our result places the threat in the \textbf{moderate} zone:
-explanations provide a non-trivial advantage but are not overwhelmingly
-powerful. The most effective safeguard against gaming is therefore
-verifying self-reported inputs rather than withholding explanations.
+applied it to a diabetes risk model using real NHANES survey data,
+with lies bounded by how people actually misreport.  In a
+pre-registered evaluation on held-out 2017--2018 data, one SHAP or
+LIME explanation was worth fewer than one blind attempt
+($N^*=0$, 95\% CI 0--0, in all eight configurations): explanations
+often pointed patients away from a profitable lie or, for the Random
+Forest, towards one that raised their score.  A model using
+nurse-measured inputs could not be gamed at all.  The effective
+safeguard against gaming is therefore verifying self-reported inputs,
+not withholding explanations.
 
 \paragraph{Future Work.}
-Extensions include multi-feature adversarial attacks, adaptive model
-defences, other clinical domains, and evaluation of counterfactual
-explanation methods.
+Sensitivity to the lie model, multi-feature and multi-step attacks,
+counterfactual explanations, other clinical domains, and a user study
+of how real patients read explanations.
+
+\paragraph{Code and Data.}
+Code, analysis plan and results:
+\url{https://github.com/AkkiNikumbh/BTECH_PROJECT}.  NHANES data are
+public and are downloaded by the pipeline.
 
 % ============================================================
 % REFERENCES
