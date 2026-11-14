@@ -1,0 +1,9 @@
+Config,Input,Model,Explanation,N_patients,Nstar,Nstar_CI_low,Nstar_CI_high,Mean_exp_reduction,Mean_blind_1,Mean_blind_10,Pct_lie_undone,PerPatient_Mean_Nstar,Pct_useless,Pct_worth_10p,Wilcoxon_p,Wilcoxon_p_Holm,Cohens_d,Significant
+reported_rf_shap,reported,RF,SHAP,1126,1.42,1.21,1.62,0.0336,0.0276,0.0699,26.9,8.9,64.1,11.2,1.0,1.0,-0.711,False
+reported_rf_lime,reported,RF,LIME,1126,0.0,0.0,0.0,0.0244,0.0276,0.0699,26.8,7.69,69.4,9.2,1.0,1.0,-0.759,False
+reported_lr_shap,reported,LR,SHAP,1126,1.07,0.0,1.2,0.0354,0.0347,0.0623,0.0,3.86,51.3,7.4,1.0,1.0,-1.139,False
+reported_lr_lime,reported,LR,LIME,1126,0.0,0.0,0.0,0.0322,0.0347,0.0623,0.0,3.43,55.5,6.5,1.0,1.0,-1.187,False
+measured_rf_shap,measured,RF,SHAP,1126,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0,1.0,1.0,0.0,False
+measured_rf_lime,measured,RF,LIME,1126,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0,1.0,1.0,0.0,False
+measured_lr_shap,measured,LR,SHAP,1126,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0,1.0,1.0,0.0,False
+measured_lr_lime,measured,LR,LIME,1126,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0,1.0,1.0,0.0,False

@@ -21,15 +21,19 @@ def merge_nhanes(cycle='2015_2016'):
     Parameters
     ----------
     cycle : str
-        '2015_2016' or '2017_2018'
+        '2015_2016', '2017_2018' or '2021_2023' (confirmatory cycle,
+        pre-registered in docs/analysis_plan_v5_confirmatory.md)
 
     Returns
     -------
     pd.DataFrame
         Merged dataset with all selected columns
     """
-    suffix = 'I' if cycle == '2015_2016' else 'J'
+    suffix = {'2015_2016': 'I', '2017_2018': 'J', '2021_2023': 'L'}[cycle]
     raw_dir = os.path.join(DATA_RAW, f'nhanes_{cycle}')
+
+    if cycle == '2021_2023':
+        return _merge_nhanes_2021_2023(raw_dir)
 
     # Load each component
     components = {
@@ -61,6 +65,49 @@ def merge_nhanes(cycle='2015_2016'):
         print(f"[DATA] Merged {name}: shape now {merged.shape}")
 
     print(f"[DATA] Final merged shape: {merged.shape}")
+    return merged
+
+
+def pad810q_to_paq650(pad810q):
+    """2021-23 PAD810Q (times of vigorous leisure activity) -> PAQ650 coding
+    (1 = yes, 2 = no). 0 -> 2, 1..200 -> 1, 7777 / 9999 / missing -> NaN."""
+    q = pd.Series(pad810q, dtype=float)
+    q = q.where(~q.isin([7777, 9999]))
+    return np.where(q.isna(), np.nan, np.where(q > 0, 1.0, 2.0))
+
+
+def _merge_nhanes_2021_2023(raw_dir):
+    """NHANES August 2021 - August 2023 (suffix L), mapped to the column
+    names of the earlier cycles. Two variables changed (pre-registered in
+    docs/analysis_plan_v5_confirmatory.md §3):
+
+    * BPXSY1 (auscultatory, 1st reading) -> BPXOSY1 (oscillometric, 1st
+      reading); BPX_L does not exist, only BPXO_L.
+    * PAQ650 "any vigorous recreational activity (1 yes / 2 no)" no longer
+      exists. From PAD810Q "how often vigorous leisure-time activity":
+      0 -> 2 (no), 1..200 -> 1 (yes), 7777/9999/missing -> missing.
+    """
+    def load(name, cols):
+        df = load_xpt(os.path.join(raw_dir, f'{name}_L.XPT'))
+        return df[[c for c in cols if c in df.columns]]
+
+    merged = load('DEMO', ['SEQN', 'RIDAGEYR', 'RIAGENDR', 'RIDRETH3', 'DMDEDUC2', 'INDFMPIR'])
+    print(f"[DATA] Loaded DEMO (2021_2023): {merged.shape}")
+    parts = [
+        ('BMX', load('BMX', ['SEQN', 'BMXHT', 'BMXWT', 'BMXBMI', 'BMXWAIST'])),
+        ('WHQ', load('WHQ', ['SEQN', 'WHD010', 'WHD020'])),
+        ('GHB', load('GHB', ['SEQN', 'LBXGH'])),
+        ('BPXO', load('BPXO', ['SEQN', 'BPXOSY1', 'BPXODI1']).rename(
+            columns={'BPXOSY1': 'BPXSY1', 'BPXODI1': 'BPXDI1'})),
+        ('SMQ', load('SMQ', ['SEQN', 'SMQ020'])),
+    ]
+    paq = load('PAQ', ['SEQN', 'PAD810Q'])
+    paq = pd.DataFrame({'SEQN': paq['SEQN'],
+                        'PAQ650': pad810q_to_paq650(paq['PAD810Q'])})
+    parts.append(('PAQ (from PAD810Q)', paq))
+    for name, df in parts:
+        merged = merged.merge(df, on='SEQN', how='left')
+        print(f"[DATA] Merged {name}: shape now {merged.shape}")
     return merged
 
 

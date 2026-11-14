@@ -7,7 +7,7 @@ import shap
 import lime
 import lime.lime_tabular
 from src.config import (LIME_N_FEATURES, SHAP_BACKGROUND_N,
-                        SEED_SHAP_BACKGROUND)
+                        SEED_SHAP_BACKGROUND, SHAP_DIRECTION)
 
 
 class ExplanationGenerator:
@@ -27,6 +27,11 @@ class ExplanationGenerator:
         self.model = model
         self.X_train = X_train
         self.feature_names = feature_names
+        self.shap_direction = SHAP_DIRECTION
+        # FIX 13: the "average patient" each SHAP value is measured against
+        # (TreeSHAP: the training data; LinearExplainer: its background
+        # sample, set below). Raw (unscaled) feature units.
+        self.shap_reference = np.asarray(X_train, dtype=float).mean(axis=0)
 
         # Initialize SHAP explainer
         if model.model_type == 'rf':
@@ -38,6 +43,7 @@ class ExplanationGenerator:
             bg_idx = np.random.RandomState(SEED_SHAP_BACKGROUND).choice(
                 len(X_train), size=n_bg, replace=False)
             X_bg = X_train[bg_idx]
+            self.shap_reference = np.asarray(X_bg, dtype=float).mean(axis=0)
             if model.scaler:
                 X_bg = model.scaler.transform(X_bg)
             self.shap_explainer = shap.LinearExplainer(model.model, X_bg)
@@ -150,7 +156,10 @@ class ExplanationGenerator:
         and the direction that should LOWER the risk score.
 
         SHAP returns exact feature names as keys; the value is a signed
-        contribution, so positive -> decrease the feature, negative -> increase.
+        contribution relative to the average patient (shap_reference).
+        FIX 13 ('toward_mean'): positive -> move the value TOWARDS the
+        average, negative -> move it further AWAY. Old rule ('sign'):
+        positive -> decrease, negative -> increase. See shap_directions().
 
         LIME (with its default discretize_continuous=True) returns BIN
         conditions like:
@@ -192,8 +201,14 @@ class ExplanationGenerator:
             # Direct match (SHAP exact names)
             if key in gameable_features:
                 val = float(val)
-                candidates = [-1] if val > 0 else ([1] if val < 0 else [])
-                direction = pick(key, candidates)
+                x_value = ref = None
+                reference = getattr(self, 'shap_reference', None)
+                if x_single is not None and reference is not None:
+                    j = self.feature_names.index(key)
+                    x_value = float(x_single[j])
+                    ref = float(reference[j])
+                rule = getattr(self, 'shap_direction', SHAP_DIRECTION)
+                direction = pick(key, shap_directions(val, x_value, ref, rule))
                 if direction != 0:
                     return key, val, direction
                 continue
@@ -208,6 +223,28 @@ class ExplanationGenerator:
                         return feat, float(val), direction
                     break
         return None, None, 0
+
+
+# ------------------------------------------------------------------
+# SHAP sign reading (FIX 13)
+# ------------------------------------------------------------------
+def shap_directions(shap_value, x_value=None, reference=None, rule='toward_mean'):
+    """Direction(s) to change a feature so the risk score goes DOWN,
+    read from its SHAP value. Empty list = no direction.
+
+    'toward_mean': SHAP > 0 (value raises risk vs. the average patient)
+                   -> move towards the average; SHAP < 0 -> move away from it.
+                   Needs x_value and reference; falls back to 'sign' without.
+    'sign'       : SHAP > 0 -> decrease; SHAP < 0 -> increase.
+    """
+    if shap_value == 0:
+        return []
+    if rule == 'toward_mean' and x_value is not None and reference is not None:
+        if x_value == reference:
+            return []
+        towards = 1 if reference > x_value else -1
+        return [towards] if shap_value > 0 else [-towards]
+    return [-1] if shap_value > 0 else [1]
 
 
 # ------------------------------------------------------------------

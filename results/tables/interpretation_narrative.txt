@@ -4,11 +4,11 @@
 ======================================================================
 
   PRIMARY (pre-registered): 1 SHAP explanation ≈ 0.0 blind attempts
-  95% CI: [0.00, 0.00]
+  95% CI: [0.00, 1.22]
 
-  Secondary, per patient: mean N* = 7.7, median N* = 0.0
+  Secondary, per patient: mean N* = 7.8, median N* = 0.0
 
-  76% of patients: explanation provides ZERO benefit
+  70% of patients: explanation provides ZERO benefit
   9% of patients: explanation worth 10+ blind attempts
 
   Pre-registered interpretation: LOW THREAT — Explanations offer minimal advantage. Transparency is SAFE.
@@ -17,9 +17,9 @@
 
 All Configurations:
 --------------------------------------------------
-  reported_rf_shap                N*=0.00  (per-patient mean=7.69, median=0.00)
+  reported_rf_shap                N*=0.00  (per-patient mean=7.80, median=0.00)
   reported_rf_lime                N*=0.00  (per-patient mean=7.07, median=0.00)
-  reported_lr_shap                N*=0.00  (per-patient mean=2.58, median=0.00)
+  reported_lr_shap                N*=0.00  (per-patient mean=3.61, median=0.00)
   reported_lr_lime                N*=0.00  (per-patient mean=2.99, median=0.00)
   measured_rf_shap                N*=0.00  (per-patient mean=0.00, median=0.00)
   measured_rf_lime                N*=0.00  (per-patient mean=0.00, median=0.00)

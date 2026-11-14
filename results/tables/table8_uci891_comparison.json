@@ -1,0 +1,91 @@
+{
+  "lie_budget": {
+    "BMI": {
+      "max_lie": 4.4587555814745246,
+      "mean_direction": "negative",
+      "mean_magnitude": 1.4898591003597859,
+      "mean_gap": -0.8528422352438051,
+      "n": 4889
+    }
+  },
+  "n_attacked": 1000,
+  "model_metrics": {
+    "rf": {
+      "accuracy": 0.6770931882686849,
+      "precision": 0.2661209321012455,
+      "recall": 0.7496109775074268,
+      "f1": 0.39279492976539043,
+      "auc_roc": 0.7760836755951934
+    },
+    "lr": {
+      "accuracy": 0.6857458215074109,
+      "precision": 0.26997045254263646,
+      "recall": 0.736737869571368,
+      "f1": 0.395144157814871,
+      "auc_roc": 0.7740259739712798
+    }
+  },
+  "table": [
+    {
+      "Model": "RF",
+      "Expl.": "SHAP",
+      "N": 1000,
+      "N*": 0.0,
+      "N* 95% CI": "[0.00, 1.04]",
+      "1 explanation": 0.0409,
+      "1 blind": 0.0436,
+      "10 blind": 0.0772,
+      "Per-patient mean N*": 16.98,
+      "% useless": 67.8,
+      "% lie undone": 16.5,
+      "Wilcoxon p": 1.0,
+      "Cohen's d": -0.703
+    },
+    {
+      "Model": "RF",
+      "Expl.": "LIME",
+      "N": 1000,
+      "N*": 0.0,
+      "N* 95% CI": "[0.00, 0.00]",
+      "1 explanation": 0.0324,
+      "1 blind": 0.0436,
+      "10 blind": 0.0772,
+      "Per-patient mean N*": 13.86,
+      "% useless": 74.7,
+      "% lie undone": 13.6,
+      "Wilcoxon p": 1.0,
+      "Cohen's d": -0.829
+    },
+    {
+      "Model": "LR",
+      "Expl.": "SHAP",
+      "N": 1000,
+      "N*": 0.0,
+      "N* 95% CI": "[0.00, 1.12]",
+      "1 explanation": 0.0369,
+      "1 blind": 0.0373,
+      "10 blind": 0.0655,
+      "Per-patient mean N*": 4.04,
+      "% useless": 49.8,
+      "% lie undone": 0.0,
+      "Wilcoxon p": 1.0,
+      "Cohen's d": -1.142
+    },
+    {
+      "Model": "LR",
+      "Expl.": "LIME",
+      "N": 1000,
+      "N*": 0.0,
+      "N* 95% CI": "[0.00, 0.00]",
+      "1 explanation": 0.0257,
+      "1 blind": 0.0373,
+      "10 blind": 0.0655,
+      "Per-patient mean N*": 2.85,
+      "% useless": 63.8,
+      "% lie undone": 0.0,
+      "Wilcoxon p": 1.0,
+      "Cohen's d": -1.316
+    }
+  ],
+  "runtime_min": null
+}

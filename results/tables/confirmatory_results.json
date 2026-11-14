@@ -1,0 +1,260 @@
+{
+  "cycle": "2021_2023",
+  "code_commit": "5b2f2409b29b758f384434746c1c033efa8eb6af",
+  "preregistration_tag": "v0.2-preregistration",
+  "n_complete": 5628,
+  "n_test": 1126,
+  "diabetes_prevalence_pct": 11.87,
+  "lie_budget_used_2015_2016": {
+    "height": {
+      "max_lie": 7.280000000000001,
+      "mean_direction": "positive",
+      "mean_magnitude": 2.6580297256097576
+    },
+    "weight": {
+      "max_lie": 8.960715200000006,
+      "mean_direction": "negative",
+      "mean_magnitude": 2.850128554485364
+    }
+  },
+  "reporting_gap_observed_2021_2023": {
+    "height": {
+      "max_lie": 6.840000000000003,
+      "mean_direction": "positive",
+      "mean_magnitude": 2.5421256366723277
+    },
+    "weight": {
+      "max_lie": 9.044232000000001,
+      "mean_direction": "negative",
+      "mean_magnitude": 2.752936564496839
+    }
+  },
+  "model_metrics": {
+    "measured_rf": {
+      "accuracy": 0.7557726465364121,
+      "precision": 0.26101694915254237,
+      "recall": 0.5746268656716418,
+      "f1": 0.358974358974359,
+      "auc_roc": 0.7642859292248435
+    },
+    "measured_lr": {
+      "accuracy": 0.6749555950266429,
+      "precision": 0.23636363636363636,
+      "recall": 0.7761194029850746,
+      "f1": 0.3623693379790941,
+      "auc_roc": 0.7692886374578718
+    },
+    "reported_rf": {
+      "accuracy": 0.7335701598579041,
+      "precision": 0.23225806451612904,
+      "recall": 0.5373134328358209,
+      "f1": 0.32432432432432434,
+      "auc_roc": 0.7581999277804525
+    },
+    "reported_lr": {
+      "accuracy": 0.6669626998223801,
+      "precision": 0.23162583518930957,
+      "recall": 0.7761194029850746,
+      "f1": 0.3567753001715266,
+      "auc_roc": 0.7807986278285989
+    }
+  },
+  "primary": {
+    "config": "reported_rf_shap",
+    "nstar": 1.4210029451216268,
+    "ci": [
+      1.2114115804813483,
+      1.6203663562408617
+    ],
+    "verdict": "LOW THREAT"
+  },
+  "results": [
+    {
+      "Config": "reported_rf_shap",
+      "Input": "reported",
+      "Model": "RF",
+      "Explanation": "SHAP",
+      "N_patients": 1126,
+      "Nstar": 1.42,
+      "Nstar_CI_low": 1.21,
+      "Nstar_CI_high": 1.62,
+      "Mean_exp_reduction": 0.0336,
+      "Mean_blind_1": 0.0276,
+      "Mean_blind_10": 0.0699,
+      "Pct_lie_undone": 26.9,
+      "PerPatient_Mean_Nstar": 8.9,
+      "Pct_useless": 64.1,
+      "Pct_worth_10p": 11.2,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": -0.711,
+      "Significant": 0.0
+    },
+    {
+      "Config": "reported_rf_lime",
+      "Input": "reported",
+      "Model": "RF",
+      "Explanation": "LIME",
+      "N_patients": 1126,
+      "Nstar": 0.0,
+      "Nstar_CI_low": 0.0,
+      "Nstar_CI_high": 0.0,
+      "Mean_exp_reduction": 0.0244,
+      "Mean_blind_1": 0.0276,
+      "Mean_blind_10": 0.0699,
+      "Pct_lie_undone": 26.8,
+      "PerPatient_Mean_Nstar": 7.69,
+      "Pct_useless": 69.4,
+      "Pct_worth_10p": 9.2,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": -0.759,
+      "Significant": 0.0
+    },
+    {
+      "Config": "reported_lr_shap",
+      "Input": "reported",
+      "Model": "LR",
+      "Explanation": "SHAP",
+      "N_patients": 1126,
+      "Nstar": 1.07,
+      "Nstar_CI_low": 0.0,
+      "Nstar_CI_high": 1.2,
+      "Mean_exp_reduction": 0.0354,
+      "Mean_blind_1": 0.0347,
+      "Mean_blind_10": 0.0623,
+      "Pct_lie_undone": 0.0,
+      "PerPatient_Mean_Nstar": 3.86,
+      "Pct_useless": 51.3,
+      "Pct_worth_10p": 7.4,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": -1.139,
+      "Significant": 0.0
+    },
+    {
+      "Config": "reported_lr_lime",
+      "Input": "reported",
+      "Model": "LR",
+      "Explanation": "LIME",
+      "N_patients": 1126,
+      "Nstar": 0.0,
+      "Nstar_CI_low": 0.0,
+      "Nstar_CI_high": 0.0,
+      "Mean_exp_reduction": 0.0322,
+      "Mean_blind_1": 0.0347,
+      "Mean_blind_10": 0.0623,
+      "Pct_lie_undone": 0.0,
+      "PerPatient_Mean_Nstar": 3.43,
+      "Pct_useless": 55.5,
+      "Pct_worth_10p": 6.5,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": -1.187,
+      "Significant": 0.0
+    },
+    {
+      "Config": "measured_rf_shap",
+      "Input": "measured",
+      "Model": "RF",
+      "Explanation": "SHAP",
+      "N_patients": 1126,
+      "Nstar": 0.0,
+      "Nstar_CI_low": 0.0,
+      "Nstar_CI_high": 0.0,
+      "Mean_exp_reduction": 0.0,
+      "Mean_blind_1": 0.0,
+      "Mean_blind_10": 0.0,
+      "Pct_lie_undone": 0.0,
+      "PerPatient_Mean_Nstar": 0.0,
+      "Pct_useless": 100.0,
+      "Pct_worth_10p": 0.0,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": 0,
+      "Significant": false
+    },
+    {
+      "Config": "measured_rf_lime",
+      "Input": "measured",
+      "Model": "RF",
+      "Explanation": "LIME",
+      "N_patients": 1126,
+      "Nstar": 0.0,
+      "Nstar_CI_low": 0.0,
+      "Nstar_CI_high": 0.0,
+      "Mean_exp_reduction": 0.0,
+      "Mean_blind_1": 0.0,
+      "Mean_blind_10": 0.0,
+      "Pct_lie_undone": 0.0,
+      "PerPatient_Mean_Nstar": 0.0,
+      "Pct_useless": 100.0,
+      "Pct_worth_10p": 0.0,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": 0,
+      "Significant": false
+    },
+    {
+      "Config": "measured_lr_shap",
+      "Input": "measured",
+      "Model": "LR",
+      "Explanation": "SHAP",
+      "N_patients": 1126,
+      "Nstar": 0.0,
+      "Nstar_CI_low": 0.0,
+      "Nstar_CI_high": 0.0,
+      "Mean_exp_reduction": 0.0,
+      "Mean_blind_1": 0.0,
+      "Mean_blind_10": 0.0,
+      "Pct_lie_undone": 0.0,
+      "PerPatient_Mean_Nstar": 0.0,
+      "Pct_useless": 100.0,
+      "Pct_worth_10p": 0.0,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": 0,
+      "Significant": false
+    },
+    {
+      "Config": "measured_lr_lime",
+      "Input": "measured",
+      "Model": "LR",
+      "Explanation": "LIME",
+      "N_patients": 1126,
+      "Nstar": 0.0,
+      "Nstar_CI_low": 0.0,
+      "Nstar_CI_high": 0.0,
+      "Mean_exp_reduction": 0.0,
+      "Mean_blind_1": 0.0,
+      "Mean_blind_10": 0.0,
+      "Pct_lie_undone": 0.0,
+      "PerPatient_Mean_Nstar": 0.0,
+      "Pct_useless": 100.0,
+      "Pct_worth_10p": 0.0,
+      "Wilcoxon_p": 1.0,
+      "Wilcoxon_p_Holm": 1.0,
+      "Cohens_d": 0,
+      "Significant": false
+    }
+  ],
+  "input_source_effect": [
+    {
+      "Model": "RF",
+      "AUC_A_measured": 0.7643,
+      "AUC_B_reported": 0.7582,
+      "Diff_A_minus_B": 0.0061,
+      "CI_low": -0.0139,
+      "CI_high": 0.0263
+    },
+    {
+      "Model": "LR",
+      "AUC_A_measured": 0.7693,
+      "AUC_B_reported": 0.7808,
+      "Diff_A_minus_B": -0.0115,
+      "CI_low": -0.0231,
+      "CI_high": -0.0015
+    }
+  ],
+  "runtime_min": 41.8
+}

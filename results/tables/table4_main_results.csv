@@ -1,7 +1,7 @@
 Config,Input,Model,Expl.,N patients,N*,95% CI,Per-patient mean N*,Per-patient median N*,% Useless,% Worth 10+
-reported_rf_shap,Reported,RF,SHAP,887,0.0,"[0.00, 0.00]",7.69,0.0,76.0%,8.7%
+reported_rf_shap,Reported,RF,SHAP,887,0.0,"[0.00, 1.22]",7.8,0.0,69.6%,9.5%
 reported_rf_lime,Reported,RF,LIME,887,0.0,"[0.00, 0.00]",7.07,0.0,73.8%,8.1%
-reported_lr_shap,Reported,LR,SHAP,887,0.0,"[0.00, 0.00]",2.58,0.0,66.4%,5.4%
+reported_lr_shap,Reported,LR,SHAP,887,0.0,"[0.00, 1.09]",3.61,0.0,52.3%,6.4%
 reported_lr_lime,Reported,LR,LIME,887,0.0,"[0.00, 0.00]",2.99,0.0,56.3%,6.1%
 measured_rf_shap,Measured,RF,SHAP,887,0.0,"[0.00, 0.00]",0.0,0.0,100.0%,0.0%
 measured_rf_lime,Measured,RF,LIME,887,0.0,"[0.00, 0.00]",0.0,0.0,100.0%,0.0%

@@ -18,11 +18,15 @@ v2 rules (see docs/fixes_v2.md), all set in src/config.py:
   * FIX 8 — every patient gets its own fixed random seed, so SHAP and LIME
             (and Model A vs B) are compared against the SAME blind attempts
             and the same lie sizes for each patient.
+  * FIX 12 — the explanation-guided patient also sees the score after the
+            lie and keeps their true answers if the lie made it worse, just
+            like the blind patient keeps the best score so far
+            (EXPLANATION_KEEP_BEST). The raw value is kept as well.
 """
 import numpy as np
 from tqdm import tqdm
 from src.config import (SEED_ADVERSARIAL, N_BLIND_ATTEMPTS,
-                        LIE_DIRECTION, LIE_MAGNITUDE)
+                        LIE_DIRECTION, LIE_MAGNITUDE, EXPLANATION_KEEP_BEST)
 
 # Offset so the explanation's lie-size stream never overlaps a blind stream
 _EXP_SEED_OFFSET = 1_000_003
@@ -38,7 +42,7 @@ class AdversarialSimulator:
     def __init__(self, model, explanation_generator, lie_budget,
                  gameable_features, feature_names,
                  lie_direction=LIE_DIRECTION, lie_magnitude=LIE_MAGNITUDE,
-                 seed=SEED_ADVERSARIAL):
+                 seed=SEED_ADVERSARIAL, keep_best=EXPLANATION_KEEP_BEST):
         """
         Parameters
         ----------
@@ -50,6 +54,7 @@ class AdversarialSimulator:
         lie_direction : 'realistic' or 'both'   (FIX 7)
         lie_magnitude : 'uniform' or 'max'      (FIX 6)
         seed : base random seed; patient i uses seed + i (FIX 8)
+        keep_best : if True, a lie that raises the score is undone (FIX 12)
         """
         if lie_direction not in ('realistic', 'both'):
             raise ValueError(f"lie_direction must be 'realistic' or 'both', got {lie_direction}")
@@ -63,6 +68,7 @@ class AdversarialSimulator:
         self.lie_direction = lie_direction
         self.lie_magnitude = lie_magnitude
         self.seed = seed
+        self.keep_best = keep_best
         # Used only when no patient index is given (e.g. scripts/demo.py)
         self.rng = np.random.RandomState(seed)
 
@@ -130,7 +136,12 @@ class AdversarialSimulator:
         Returns
         -------
         dict: new_x, original_score, new_score, score_reduction,
-              changed_feature, change_amount, method
+              raw_reduction, lie_kept, changed_feature, change_amount, method
+
+        score_reduction is what the patient ends up with: with keep_best
+        (FIX 12) a lie that RAISED the score is undone, so it is >= 0, the
+        same rule as the blind attacker. raw_reduction is the effect of the
+        suggested lie itself (can be negative).
         """
         original_score = float(self.model.predict_proba(
             x_original.reshape(1, -1)
@@ -141,6 +152,8 @@ class AdversarialSimulator:
             'original_score': original_score,
             'new_score': original_score,
             'score_reduction': 0.0,
+            'raw_reduction': 0.0,
+            'lie_kept': False,
             'changed_feature': None,
             'change_amount': 0.0,
             'method': explanation_method,
@@ -180,12 +193,23 @@ class AdversarialSimulator:
         new_x[feat_idx] += change
 
         new_score = float(self.model.predict_proba(new_x.reshape(1, -1))[0])
+        raw_reduction = original_score - new_score
+
+        # FIX 12: the patient sees the new score; if the lie made it worse, a
+        # rational patient keeps their true answers (as the blind one does).
+        lie_kept = True
+        if self.keep_best and raw_reduction < 0:
+            lie_kept = False
+            new_x = x_original.copy()
+            new_score = original_score
 
         return {
             'new_x': new_x,
             'original_score': original_score,
             'new_score': new_score,
             'score_reduction': original_score - new_score,
+            'raw_reduction': raw_reduction,
+            'lie_kept': lie_kept,
             'changed_feature': top_feat,
             'change_amount': change,
             'method': explanation_method,
@@ -303,6 +327,7 @@ class AdversarialSimulator:
                 'patient_idx': i,
                 'original_score': exp_result['original_score'],
                 'explanation_reduction': exp_result['score_reduction'],
+                'explanation_raw_reduction': exp_result['raw_reduction'],
                 'explanation_feature': exp_result['changed_feature'],
                 'explanation_change': exp_result['change_amount'],
                 'blind_reductions': blind_reductions,

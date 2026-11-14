@@ -315,6 +315,13 @@ for run_key, data in all_results.items():
         'Nstar_CI_low':  round(ci['nstar_ci'][0], 2),
         'Nstar_CI_high': round(ci['nstar_ci'][1], 2),
         'Mean_exp_reduction': round(s['mean_explanation_reduction'], 4),
+        # FIX 12: effect of the suggested lie before a bad lie is undone
+        'Mean_exp_raw_reduction': round(float(np.mean(
+            [r.get('explanation_raw_reduction', r['explanation_reduction'])
+             for r in data['results']])), 4),
+        'Pct_lie_undone': round(float(np.mean(
+            [r.get('explanation_raw_reduction', 0.0) < 0
+             for r in data['results']])) * 100, 1),
         # SECONDARY (per-patient)
         'PerPatient_Mean_Nstar':   round(s['mean_equivalence'], 2),
         'PerPatient_Median_Nstar': round(s['median_equivalence'], 2),
@@ -325,6 +332,7 @@ for run_key, data in all_results.items():
         'Pct_useless':   round(s['pct_explanation_useless'], 1),
         'Pct_worth_10p': round(s['pct_explanation_worth_10plus'], 1),
         'Wilcoxon_p':    round(st.get('wilcoxon_pval', 1.0), 6),
+        'Wilcoxon_p_Holm': round(st.get('wilcoxon_pval_holm', 1.0), 6),
         'Cohens_d':      round(st.get('cohens_d', 0.0), 3),
         'Significant':   st.get('significant', False),
     })

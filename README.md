@@ -3,31 +3,26 @@
 
 **B.Tech Project (BTP) | Group GP-109 | Delhi Technological University, CSE | 2026–27**
 
-[![Pre-registration](https://img.shields.io/badge/Pre--registered-v0.1--preregistration-blue)](https://github.com/Akshat-stack47/BTP-XAI-Gaming/releases/tag/v0.1-preregistration)
+[![Pre-registration v0.1](https://img.shields.io/badge/Pre--registered-v0.1-blue)](https://github.com/Akshat-stack47/BTP-XAI-Gaming/releases/tag/v0.1-preregistration)
+[![Pre-registration v0.2](https://img.shields.io/badge/Confirmatory%20pre--registration-v0.2-blue)](https://github.com/AkkiNikumbh/BTECH_PROJECT/releases/tag/v0.2-preregistration)
 [![Python](https://img.shields.io/badge/Python-3.12-green)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-40%2F40%20passing-brightgreen)]()
-[![Review](https://img.shields.io/badge/Integrity%20checks-163%2F164%20(1%20warning)-brightgreen)]()
+[![Tests](https://img.shields.io/badge/Tests-54%2F54%20passing-brightgreen)]()
 
 ---
 
-> ### 🔧 v2 — implementation fixes
+> ### 🔧 Implementation fixes (v2 → v5)
 > This is a **fixed copy** of [`Akshat-stack47/BTP-XAI-Gaming`](https://github.com/Akshat-stack47/BTP-XAI-Gaming),
-> which stays unchanged as the comparison baseline. Four implementation bugs are fixed:
-> (1) the measured model was attacked through nurse-measured values,
-> (2) the LIME-guided attack sometimes moved in the wrong direction,
-> (3) valid self-reported heights/weights were deleted as "refused" codes,
-> (5) the final run used the 2017–18 lie budget instead of the pre-registered 2015–16 one.
->
-> **v3** also fixes the remaining implementation issues:
-> (4) the headline N\* is now computed as pre-registered (from the mean curve),
-> (6) both attackers use the same lie-size rule, (7) only realistic lies (height ↑, weight ↓),
-> (8) per-patient random seeds, (9) LIME shows all features, (10) balanced class weights,
-> (11) a random SHAP background. Some of these deviate from the pre-registered plan;
-> they are listed in the deviations table in the details file.
+> which stays unchanged as the comparison baseline. Thirteen issues are fixed, including:
+> the measured model was attacked through nurse-measured values (1), LIME and SHAP were
+> sometimes read in the wrong direction (2, 13), valid self-reports were deleted (3), the wrong
+> lie budget (5), the headline N\* not computed as pre-registered (4), unequal lie sizes for the
+> two attackers (6), and a risk-raising explanation-guided lie that the patient could not undo (12).
 > Details: [`docs/fixes_v2.md`](docs/fixes_v2.md).
 >
-> ✅ **The results, figures and tables in `results/` were regenerated with the v3 code**
-> on the real NHANES data (2015–16 trial, 2017–18 held-out final run).
+> ⚠️ **The 2017–18 held-out data was seen before these fixes.** The 2017–18 results are therefore
+> **exploratory**. The corrected analysis was pre-registered again (`v0.2-preregistration`) and
+> tested once on **NHANES 2021–2023**, which no one on the team had analysed: that is the
+> **confirmatory** result below. Full account: [`docs/preregistration_disclosure.md`](docs/preregistration_disclosure.md).
 
 ---
 
@@ -43,26 +38,47 @@ We introduce the **Explanation Equivalence metric N\***: the number of blind tri
 
 ## 🔬 Key Result
 
-Tested on **NHANES 2017–2018 held-out data (N = 887 test patients)**, v3 code:
+### Confirmatory: NHANES 2021–2023 (pre-registered `v0.2`, N = 1,126 test patients)
 
-| Configuration | **N\*** (primary, pre-registered) | 95% CI | Per-patient mean N\* | % Explanation Useless |
-|---|---|---|---|---|
-| **RF + SHAP, Reported ★** | **0.0** | **[0.0, 0.0]** | 7.69 | **76.0%** |
-| RF + LIME, Reported | 0.0 | [0.0, 0.0] | 7.07 | 73.8% |
-| LR + SHAP, Reported | 0.0 | [0.0, 0.0] | 2.58 | 66.4% |
-| LR + LIME, Reported | 0.0 | [0.0, 0.0] | 2.99 | 56.3% |
-| RF + SHAP, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
-| RF + LIME, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
-| LR + SHAP, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
-| LR + LIME, Measured | 0.0 | [0.0, 0.0] | 0.00 | 100% |
+| Configuration | N\* | 95% CI | 1 explanation | 1 blind | 10 blind | Wilcoxon p (Holm) |
+|---|---|---|---|---|---|---|
+| **RF + SHAP, Reported ★** | **1.42** | **[1.21, 1.62]** | 0.0336 | 0.0276 | 0.0699 | 1.0 |
+| RF + LIME, Reported | 0.00 | [0.00, 0.00] | 0.0244 | 0.0276 | 0.0699 | 1.0 |
+| LR + SHAP, Reported | 1.07 | [0.00, 1.20] | 0.0354 | 0.0347 | 0.0623 | 1.0 |
+| LR + LIME, Reported | 0.00 | [0.00, 0.00] | 0.0322 | 0.0347 | 0.0623 | 1.0 |
+| All 4 Measured (Model A) | 0.00 | [0.00, 0.00] | 0 | 0 | 0 | 1.0 |
 
-★ Primary pre-registered configuration. Full table: [`results/tables/final_results.csv`](results/tables/final_results.csv).
+★ Primary pre-registered configuration. Full table: [`results/tables/confirmatory_results.csv`](results/tables/confirmatory_results.csv);
+run with `python scripts/run_confirmatory.py` at tag `v0.2-preregistration`.
 
-> **Verdict: LOW THREAT** (N\* < 5)
-> On average, one explanation-guided lie lowers the risk score **less** than one random realistic lie
-> (RF+SHAP: 0.013 vs 0.024). The explanation leads the patient not to lie (3–31% of patients), or, for the
-> random forest, to a lie that **raises** their risk (23–31%).
-> Model A (nurse-measured inputs) cannot be gamed at all; Model B can be lowered by ~0.06 with 10 blind attempts.
+### Exploratory: NHANES 2017–2018 (v5 code, N = 887 test patients)
+
+| Configuration | N\* | 95% CI | 1 explanation | 1 blind | 10 blind | Per-patient mean N\* |
+|---|---|---|---|---|---|---|
+| **RF + SHAP, Reported ★** | **0.0** | [0.0, 1.22] | 0.0233 | 0.0240 | 0.0638 | 7.80 |
+| RF + LIME, Reported | 0.0 | [0.0, 0.0] | 0.0181 | 0.0240 | 0.0638 | 7.07 |
+| LR + SHAP, Reported | 0.0 | [0.0, 1.09] | 0.0242 | 0.0248 | 0.0457 | 3.61 |
+| LR + LIME, Reported | 0.0 | [0.0, 0.0] | 0.0223 | 0.0248 | 0.0457 | 2.99 |
+| All 4 Measured (Model A) | 0.0 | [0.0, 0.0] | 0 | 0 | 0 | 0 |
+
+★ Primary configuration. Full table: [`results/tables/final_results.csv`](results/tables/final_results.csv).
+
+### Comparison dataset: CDC Diabetes Health Indicators (UCI 891, BRFSS 2015, 1,000 test respondents)
+
+N\* = 0.0 in all four configurations (self-reported BMI as the only gameable feature):
+[`results/tables/table8_uci891_comparison.csv`](results/tables/table8_uci891_comparison.csv).
+
+### Model A (measured) vs Model B (self-reported)
+
+Model A cannot be gamed **by design** (nothing the patient can lie about). Using measured instead of
+self-reported height/weight changes AUC by +0.005 (RF, 95% CI −0.009 to +0.018) and −0.006
+(LR, −0.013 to +0.000) on the same patients: no measurable cost
+([`table6b_input_source_effect.csv`](results/tables/table6b_input_source_effect.csv)).
+
+> **Verdict: LOW THREAT** (N\* < 5), as pre-registered: one explanation is worth about **one to two**
+> blind attempts (confirmatory primary N\* = 1.42, upper 95% bound 1.62). Every pre-registered prediction held.
+> For the random forest, ~27–31% of explanation-guided lies **raise** the risk and are undone.
+> Model A (nurse-measured inputs) cannot be gamed; Model B can be lowered by ~0.06–0.07 with 10 blind attempts.
 > **Policy implication: verify self-reported inputs rather than withhold explanations.**
 
 ---
@@ -79,13 +95,17 @@ BTP/
 │   ├── explanations.py     # SHAP + LIME generator
 │   ├── adversarial.py      # AdversarialSimulator (core experiment)
 │   ├── metrics.py          # N* computation + bootstrap CI + Wilcoxon
+│   ├── supporting_data.py  # UCI 45 / UCI 891 loaders, NHANES BMI lie budget
 │   └── visualization.py   # All 8 publication figures
 │
 ├── scripts/
 │   ├── prepare_data.py     # Stage 3: data preparation
 │   ├── run_trial.py        # Stage 5: trial run on dev set
-│   ├── run_final.py        # Stage 7: final experiment on held-out data
+│   ├── run_final.py        # Stage 7: 2017-18 run (exploratory)
+│   ├── run_confirmatory.py # confirmatory run on NHANES 2021-23 (pre-registered v0.2)
 │   ├── run_analysis.py     # Stage 8: figures + tables
+│   ├── check_uci_heart.py  # P1: hand check on UCI Heart Disease (UCI 45)
+│   ├── run_uci_cdc_comparison.py  # comparison on CDC Diabetes (UCI 891)
 │   ├── demo.py             # Live viva demo (patient walkthrough)
 │   └── final_review.py     # 164-check project integrity script
 │
@@ -100,7 +120,7 @@ BTP/
 │
 ├── paper/                  # Research paper (LaTeX)
 ├── thesis/                 # BTP thesis (LaTeX, 7 chapters + 4 appendices)
-├── tests/                  # 40 unit tests
+├── tests/                  # 54 tests
 └── roadmap/                # Stage-by-stage project roadmap (11 stages)
 ```
 
@@ -113,8 +133,12 @@ BTP/
 ```bash
 git clone https://github.com/AkkiNikumbh/BTECH_PROJECT.git
 cd BTECH_PROJECT
-pip install numpy pandas scikit-learn shap lime scipy matplotlib seaborn tqdm pytest
+pip install -r requirements-lock.txt   # exact versions used to produce results/
 ```
+
+The random-forest results depend on the scikit-learn version, so use the
+lock file to reproduce `results/` exactly (`requirements.txt` gives minimum
+versions only).
 
 ### 2. Download NHANES data
 
@@ -124,7 +148,15 @@ Download the following XPT files from [CDC NHANES](https://www.cdc.gov/nchs/nhan
 - Questionnaire: Blood Pressure & Cholesterol (BPQ), Physical Activity (PAQ), Smoking (SMQ)
 - Laboratory: Glycohemoglobin (GHB)
 
-Place in `data/raw/nhanes_2015_2016/` and `data/raw/nhanes_2017_2018/`.
+Place in `data/raw/nhanes_2015_2016/` and `data/raw/nhanes_2017_2018/`
+(or run `python scripts/download_nhanes.py`).
+
+Supporting datasets (research plan §6.4):
+- UCI Heart Disease (id 45): `heart+disease.zip` from
+  https://archive.ics.uci.edu/dataset/45/heart+disease →
+  `data/raw/uci_45_heart_disease/heart_disease.zip`
+- CDC Diabetes Health Indicators (id 891): https://archive.ics.uci.edu/static/public/891/data.csv →
+  `data/raw/uci_891_cdc_diabetes/data.csv`
 
 ### 3. Prepare data
 
@@ -132,11 +164,15 @@ Place in `data/raw/nhanes_2015_2016/` and `data/raw/nhanes_2017_2018/`.
 python scripts/prepare_data.py
 ```
 
-### 4. Run the final experiment
+### 4. Run the experiments
 
 ```bash
-python scripts/run_final.py
+python scripts/run_final.py          # 2017-18 (exploratory)
+python scripts/run_confirmatory.py   # 2021-23 (confirmatory, pre-registered v0.2)
 ```
+
+For the confirmatory run, also download the 2021–2023 files (`DEMO_L`, `BMX_L`, `WHQ_L`,
+`GHB_L`, `BPXO_L`, `SMQ_L`, `PAQ_L`) into `data/raw/nhanes_2021_2023/`.
 
 ### 5. Generate all figures and tables
 
@@ -144,16 +180,23 @@ python scripts/run_final.py
 python scripts/run_analysis.py
 ```
 
-### 6. Run the viva demo
+### 6. Supporting datasets
+
+```bash
+python scripts/check_uci_heart.py          # P1: hand-checkable test on UCI 45
+python scripts/run_uci_cdc_comparison.py   # comparison run on UCI 891 (~25 min)
+```
+
+### 7. Run the viva demo
 
 ```bash
 python scripts/demo.py --patient 42
 ```
 
-### 7. Run tests
+### 8. Run tests
 
 ```bash
-python -m pytest tests/ -v          # 40 unit tests
+python -m pytest tests/ -v          # 54 tests
 python scripts/final_review.py      # 164-check integrity
 ```
 
@@ -176,11 +219,20 @@ python scripts/final_review.py      # 164-check integrity
 
 ## 🔒 Pre-Registration
 
-This study was **pre-registered before any analysis of the held-out 2017–2018 data**.
+The analysis plan was **pre-registered before any analysis of the held-out 2017–2018 data**.
+
+> ⚠️ **Disclosure.** A first final run on the held-out data, with the code as
+> pre-registered, was made and seen before the fixes in `docs/fixes_v2.md`
+> (it reported a per-patient mean N\* of 9–23, a moderate-to-high threat).
+> The settings used for the results above were chosen after that, so the
+> 2017–2018 run is **not a clean confirmatory test**. Full timeline, the
+> first run's numbers and every deviation:
+> [`docs/preregistration_disclosure.md`](docs/preregistration_disclosure.md).
 
 - Pre-registration document: [`docs/analysis_plan.md`](docs/analysis_plan.md)
 - Git tag: [`v0.1-preregistration`](https://github.com/Akshat-stack47/BTP-XAI-Gaming/releases/tag/v0.1-preregistration)
-- All deviations logged: [`docs/changelog_trial_to_final.md`](docs/changelog_trial_to_final.md)
+- All deviations logged: [`docs/changelog_trial_to_final.md`](docs/changelog_trial_to_final.md),
+  [`docs/fixes_v2.md`](docs/fixes_v2.md), [`docs/preregistration_disclosure.md`](docs/preregistration_disclosure.md)
 
 ---
 
