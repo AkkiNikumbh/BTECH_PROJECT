@@ -386,11 +386,19 @@ stat_path = os.path.join(RESULTS_TABLES, 'final_results.json')
 if os.path.exists(stat_path):
     with open(stat_path) as f:
         master = json.load(f)
+    # Holm-adjusted p (secondary) is in final_results.csv
+    _csv = os.path.join(RESULTS_TABLES, 'final_results.csv')
+    _holm = {}
+    if os.path.exists(_csv):
+        _df = pd.read_csv(_csv)
+        if 'Wilcoxon_p_Holm' in _df.columns:
+            _holm = dict(zip(_df['Config'], _df['Wilcoxon_p_Holm']))
     rows5 = []
     for key, res in master.get('results', {}).items():
         rows5.append({
             'Config':      key,
             'Wilcoxon p':  f"{res.get('wilcoxon_p', 1.0):.6f}",
+            'p (Holm)':    f"{_holm[key]:.6f}" if key in _holm else 'n/a',
             "Cohen's d":   f"{res.get('cohens_d', 0.0):.3f}",
             'Significant': '✓' if res.get('significant', False) else '✗',
         })

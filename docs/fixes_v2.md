@@ -6,7 +6,7 @@ The original repo is left unchanged as the **comparison baseline**. The first co
 here is an unmodified snapshot of it, so `git diff <baseline-commit> HEAD` shows
 exactly what changed.
 
-> The files in `results/` were regenerated with the v4 code (fixes 1–12) in
+> The files in `results/` were regenerated with the v5 code (fixes 1–13) in
 > the library versions pinned in `requirements-lock.txt`.
 >
 > ⚠️ **Read [`preregistration_disclosure.md`](preregistration_disclosure.md)**:
@@ -200,6 +200,34 @@ reported in Table 7 (column "lie not undone") and in `final_results.csv`
 pre-registered plan (step 5 of Strategy 1 reports the new score as is).
 
 **Tests:** `tests/test_fixes_v4.py`.
+
+## Fix 13 — SHAP sign read relative to the average patient (`SHAP_DIRECTION = 'toward_mean'`)
+
+**Files:** `src/explanations.py`, `src/config.py`, `scripts/check_uci_heart.py`
+
+**Bug:** a SHAP value measures a feature's effect relative to the average
+patient (for a linear model `w·(x − mean)`), but the attacker read every
+positive value as "decrease this feature". A shorter-than-average patient
+told "your height raises your risk" was told to claim to be *shorter*, an
+unrealistic lie that was then skipped (31% of LR+SHAP patients got no
+suggestion). Found by the UCI 45 hand check.
+
+**Fix:** positive SHAP → move the value towards the average; negative →
+further away (`shap_directions()`). The old rule is kept as
+`SHAP_DIRECTION = 'sign'`. **Tests:** `tests/test_fixes_v4.py`, `tests/test_uci_hand_check.py`.
+
+## Other additions (research-plan alignment)
+
+* **Model A vs B, measured:** Model A cannot be gamed *by design*, so the
+  comparison now also reports the AUC difference (measured − self-reported)
+  on the same test patients with a paired bootstrap CI
+  (`paired_auc_difference()`, Table 6b).
+* **statsmodels:** Holm-adjusted Wilcoxon p-values across the configurations
+  (secondary; `run_statistical_tests()`).
+* **Confirmatory test:** `docs/analysis_plan_v5_confirmatory.md`, tag
+  `v0.2-preregistration`, `scripts/run_confirmatory.py`, NHANES 2021–2023
+  (loader mapping in `src/data_loader.py`). Results:
+  `results/tables/confirmatory_*`.
 
 ## Supporting datasets from the research plan (§6.4)
 

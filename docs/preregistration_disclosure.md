@@ -125,6 +125,12 @@ NHANES August 2021 – August 2023 (`scripts/run_confirmatory.py`, results in
 `results/tables/confirmatory_*`). That run is the confirmatory result; the
 2017–2018 numbers are exploratory.
 
+**Result (run once, unchanged, at commit `5b2f240`):** primary (Model B,
+RF + SHAP) N\* = **1.42**, 95% CI [1.21, 1.62] → **low threat**, as
+pre-registered. Model B N\* ranges 0–1.42; no Wilcoxon test significant
+(p = 1.0, also after Holm). Every pre-registered prediction in §7 of the
+plan held. Full table: `results/tables/confirmatory_results.csv`.
+
 ## How to report this
 
 * State in the paper and thesis that a first final run on 2017–2018 was seen

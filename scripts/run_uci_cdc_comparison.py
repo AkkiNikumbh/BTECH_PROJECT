@@ -49,12 +49,59 @@ from src.metrics import (compute_equivalence, compute_confidence_intervals,
 N_PATIENTS = 1000
 NS = FINAL_CONFIG['blind_attempts']
 
+def _tex(v):
+    return (str(v).replace('\\', r'\textbackslash{}').replace('%', r'\%')
+            .replace('&', r'\&').replace('_', r'\_').replace('#', r'\#'))
+
+
+def write_outputs(df, budget, metrics, base, runtime_min=None):
+    """LaTeX table + JSON summary (plain LaTeX, so jinja2 is not needed)."""
+    cols = list(df.columns)
+    lines = [r'\begin{table*}[t]', r'  \centering',
+             r'  \caption{Comparison dataset (CDC Diabetes Health Indicators, UCI 891; '
+             r'BRFSS 2015, 1{,}000 sampled test respondents): one explanation vs.\ '
+             r'blind attempts, with self-reported BMI as the only gameable feature.}',
+             r'  \label{tab:uci891}', r'  \small',
+             r'  \resizebox{\linewidth}{!}{%',
+             r'  \begin{tabular}{ll' + 'r' * (len(cols) - 2) + '}', r'    \toprule',
+             '    ' + ' & '.join(_tex(c) for c in cols) + r' \\', r'    \midrule']
+    for _, r in df.iterrows():
+        lines.append('    ' + ' & '.join(_tex(r[c]) for c in cols) + r' \\')
+    lines += [r'    \bottomrule', r'  \end{tabular}}', r'\end{table*}', '']
+    with open(base + '.tex', 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines))
+    with open(base + '.json', 'w', encoding='utf-8') as f:
+        json.dump({'lie_budget': budget, 'n_attacked': N_PATIENTS,
+                   'model_metrics': metrics, 'table': df.to_dict(orient='records'),
+                   'runtime_min': runtime_min}, f, indent=2, default=float)
+
+
 if not os.path.exists(UCI891_CSV):
     sys.exit(f"Missing {UCI891_CSV}. Download data.csv from "
              "https://archive.ics.uci.edu/static/public/891/data.csv")
 
 set_all_seeds()
 t0 = time.time()
+
+if '--tables-only' in sys.argv:
+    # Rebuild .tex / .json from the saved CSV without a new attack run; the
+    # lie budget and model metrics are deterministic and recomputed here.
+    base = os.path.join(RESULTS_TABLES, 'table8_uci891_comparison')
+    with open(os.path.join(DATA_PROCESSED, 'nhanes_2015_2016_prepared.pkl'), 'rb') as f:
+        _budget = nhanes_bmi_lie_budget(pickle.load(f)['df_complete'],
+                                        pct=FINAL_CONFIG['lie_budget_percentile'])
+    _X, _y, _fn = load_cdc_diabetes()
+    _tr, _te = train_test_split(np.arange(len(_y)), test_size=TEST_SIZE,
+                                random_state=SEED_TRAIN_TEST_SPLIT, stratify=_y)
+    _metrics = {}
+    for _mt in FINAL_CONFIG['model_types']:
+        with contextlib.redirect_stdout(io.StringIO()):
+            _m = DiabetesModel(_mt, 'reported')
+            _m.train(_X[_tr], _y[_tr], feature_names=_fn)
+            _metrics[_mt] = _m.evaluate(_X[_te], _y[_te])
+    write_outputs(pd.read_csv(base + '.csv'), _budget, _metrics, base)
+    print(f"  Rebuilt {base}.tex / .json from the CSV")
+    sys.exit(0)
 print("=" * 70)
 print("  Comparison dataset: CDC Diabetes Health Indicators (UCI 891)")
 print("=" * 70)
@@ -132,16 +179,7 @@ df = pd.DataFrame(rows)
 os.makedirs(RESULTS_TABLES, exist_ok=True)
 base = os.path.join(RESULTS_TABLES, 'table8_uci891_comparison')
 df.to_csv(base + '.csv', index=False, encoding='utf-8')
-with open(base + '.tex', 'w', encoding='utf-8') as f:
-    f.write(df.to_latex(index=False, escape=True,
-                        caption='Comparison dataset (CDC Diabetes Health Indicators, '
-                                'UCI 891): one explanation vs.\\ blind attempts, '
-                                'self-reported BMI as the only gameable feature',
-                        label='tab:uci891'))
-with open(base + '.json', 'w', encoding='utf-8') as f:
-    json.dump({'lie_budget': budget, 'n_attacked': N_PATIENTS,
-               'model_metrics': metrics, 'table': rows,
-               'runtime_min': round((time.time() - t0) / 60, 1)}, f, indent=2)
+write_outputs(df, budget, metrics, base, runtime_min=round((time.time() - t0) / 60, 1))
 
 print("\n" + df.to_string(index=False))
 print(f"\n  Saved: {base}.csv / .tex / .json  ({(time.time()-t0)/60:.1f} min)")

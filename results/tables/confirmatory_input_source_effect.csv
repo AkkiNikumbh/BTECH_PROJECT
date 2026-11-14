@@ -1,0 +1,3 @@
+Model,AUC_A_measured,AUC_B_reported,Diff_A_minus_B,CI_low,CI_high
+RF,0.7643,0.7582,0.0061,-0.0139,0.0263
+LR,0.7693,0.7808,-0.0115,-0.0231,-0.0015

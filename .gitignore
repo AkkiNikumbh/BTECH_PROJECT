@@ -32,3 +32,18 @@ desktop.ini
 
 # Logs
 *.log
+
+# LaTeX build files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+
+# Run logs
+logs/

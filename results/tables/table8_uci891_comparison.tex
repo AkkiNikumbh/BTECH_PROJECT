@@ -1,0 +1,17 @@
+\begin{table*}[t]
+  \centering
+  \caption{Comparison dataset (CDC Diabetes Health Indicators, UCI 891; BRFSS 2015, 1{,}000 sampled test respondents): one explanation vs.\ blind attempts, with self-reported BMI as the only gameable feature.}
+  \label{tab:uci891}
+  \small
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{llrrrrrrrrrrr}
+    \toprule
+    Model & Expl. & N & N* & N* 95\% CI & 1 explanation & 1 blind & 10 blind & Per-patient mean N* & \% useless & \% lie undone & Wilcoxon p & Cohen's d \\
+    \midrule
+    RF & SHAP & 1000 & 0.0 & [0.00, 1.04] & 0.0409 & 0.0436 & 0.0772 & 16.98 & 67.8 & 16.5 & 1.0 & -0.703 \\
+    RF & LIME & 1000 & 0.0 & [0.00, 0.00] & 0.0324 & 0.0436 & 0.0772 & 13.86 & 74.7 & 13.6 & 1.0 & -0.829 \\
+    LR & SHAP & 1000 & 0.0 & [0.00, 1.12] & 0.0369 & 0.0373 & 0.0655 & 4.04 & 49.8 & 0.0 & 1.0 & -1.142 \\
+    LR & LIME & 1000 & 0.0 & [0.00, 0.00] & 0.0257 & 0.0373 & 0.0655 & 2.85 & 63.8 & 0.0 & 1.0 & -1.316 \\
+    \bottomrule
+  \end{tabular}}
+\end{table*}

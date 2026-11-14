@@ -77,17 +77,20 @@ direction of real self-reporting errors observed in NHANES. We train
 four models---Random Forest and Logistic Regression, each with
 nurse-measured or self-reported height/weight---and measure the
 \emph{explanation equivalence} $N^*$: how many blind attempts give the
-same mean score reduction as one explanation-guided lie. In our
-pre-registered evaluation on the held-out 2017--2018 NHANES cycle
-($n=887$ test patients), $N^* = 0.0$ (95\% CI 0.0--0.0) in all eight
-configurations: one explanation-guided lie lowers the risk score
-\emph{less} on average than one random realistic lie (e.g.\ 0.013 vs.\
-0.024 for Random Forest with SHAP). Explanations often point the
-patient away from a profitable lie, or, for the Random Forest, towards
-a lie that raises the score. The model that uses nurse-measured inputs
-cannot be gamed at all. Withholding explanations is therefore not an
-effective safeguard; verifying self-reported inputs is.
-We release our code, data pipeline, and pre-registered analysis plan.
+same mean score reduction as one explanation-guided lie. In a
+pre-registered confirmatory test on the NHANES 2021--2023 cycle
+($n=1{,}126$ test patients), $N^* = 1.42$ (95\% CI 1.21--1.62) for the
+primary configuration (Random Forest with SHAP) and 0--1.42 across all
+configurations: one explanation is worth about one or two ordinary
+attempts at the model.  An exploratory analysis of 2017--2018 and a
+second dataset (BRFSS, 253{,}680 respondents) agree ($N^* = 0$, upper
+95\% bounds $\le 1.2$).
+Random-Forest lies suggested by an explanation often raise the score
+instead.  The model that uses nurse-measured inputs cannot be gamed and
+is as accurate.  Withholding explanations is therefore not an effective
+safeguard; verifying self-reported inputs is.  We disclose that our
+first pre-registered test set was examined before the analysis was
+corrected, and release code, data pipeline and both analysis plans.
 \end{abstract}
 
 % ---- CCS Concepts / Keywords --------------------------------
@@ -154,10 +157,10 @@ transparency must be weighed against the gaming risk.
   \item We train two models that differ \emph{only} in whether
         height/weight are self-reported or measured, isolating the
         effect of input verification.
-  \item We conduct a \emph{pre-registered} evaluation of SHAP and LIME
-        on held-out data and find that, under realistic lies, one
-        explanation is worth fewer than one blind attempt
-        ($N^*=0$ in all configurations).
+  \item We conduct a \emph{pre-registered} confirmatory evaluation of
+        SHAP and LIME on an unseen NHANES cycle and find that, under
+        realistic lies, one explanation is worth about one to two blind
+        attempts ($N^* \le 1.42$), replicated on a second survey.
 \end{enumerate}
 
 % ============================================================
@@ -272,14 +275,35 @@ We use the NHANES public health survey~\cite{johnson2014national} and
 merge the demographics (DEMO), body measures (BMX), weight history
 questionnaire (WHQ), glycohaemoglobin (GHB), blood pressure (BPX),
 smoking (SMQ), and physical activity (PAQ) files for the 2015--2016
-(development) and 2017--2018 (held-out test) cycles.  Refused and
+(development), 2017--2018 (exploratory test) and August
+2021--August 2023 (confirmatory test) cycles.  Refused and
 don't-know codes are removed per variable as in the NHANES codebooks.
 Retaining adults ($\geq$18 years) with complete records for both
 feature sets gives 4{,}889 participants in 2015--2016 (12.4\% with
 diabetes, HbA1c $\geq 6.5\%$~\cite{ada2023standards}) and 4{,}431 in
 2017--2018 (13.6\%).  Within each cycle we use a stratified 80/20
-split; the final evaluation uses the $n=887$ test patients of the
-2017--2018 cycle, which was not examined during development.
+split.  Models are \emph{retrained} on each cycle's training split with
+the locked hyperparameters; only the lie budget (\S3.2) carries over
+from 2015--2016.  The 2017--2018 evaluation uses its $n=887$ test
+patients; because it was seen before the code was corrected
+(\cref{sec:preregistration}), we treat it as \emph{exploratory} and
+re-test the final analysis on the August 2021--August 2023 cycle, which
+no one on the team had analysed (\emph{confirmatory};
+\cref{sec:confirmatory}).  In that cycle systolic blood pressure is
+measured with an oscillometric device (\texttt{BPXOSY1}) and vigorous
+activity is derived from the redesigned activity question
+(\texttt{PAD810Q} $>0$); both mappings were fixed before the data was
+processed.
+
+\paragraph{Supporting datasets.}  As planned, we use two UCI datasets.
+UCI Heart Disease (Cleveland, 297 patients) serves as a hand-checkable
+test of the code: with a logistic regression every risk score, SHAP
+value, suggested lie and blind best-of-$N$ has a closed form, and the
+pipeline reproduces all of them to machine precision.  The CDC Diabetes
+Health Indicators dataset (BRFSS 2015, 253{,}680 respondents) is a
+comparison: its BMI is computed from self-reported height and weight,
+so it supports only a Model~B analysis, and its diabetes label is
+itself self-reported.
 
 \subsection{Models}
 
@@ -309,12 +333,16 @@ features, and all seven features shown.
 The patient requests one explanation and reads it the way it is
 presented: features ranked by importance, each pushing the risk up or
 down.  Going down the ranking, the patient takes the first gameable
-feature whose risk-lowering direction is a realistic lie (SHAP: lower
-a feature with positive attribution, raise one with negative
-attribution; LIME: leave a risk-raising bin, e.g.\ raise the feature
-if the explanation says ``\emph{weight $\le$ 62\,kg} raises risk'').
-If no realistic lie is suggested, the patient does not lie.  Otherwise
-they lie once, with a size drawn as in \S3.2.
+feature whose risk-lowering direction is a realistic lie.  A SHAP
+value measures a feature's effect relative to the average patient, so a
+positive value (``your height raises your risk'') means moving the
+value \emph{towards} the average and a negative one moving it further
+away; LIME is read from its bins, e.g.\ raise the feature if the
+explanation says ``\emph{weight $\le$ 62\,kg} raises risk''.  If no
+realistic lie is suggested, the patient does not lie.  Otherwise they
+lie once, with a size drawn as in \S3.2, and see the new score; like
+the blind patient, who keeps the best score so far, they keep their
+true answers if the lie made the score worse.
 
 \paragraph{Strategy 2 (Blind Trial-and-Error).}
 The patient makes $N$ sequential attempts.  Each picks a gameable
@@ -333,7 +361,10 @@ For each configuration we report $N^*$ with a 95\% CI from 1{,}000
 bootstrap resamples of patients; a one-sided paired Wilcoxon
 signed-rank test~\cite{wilcoxon1945individual} of the per-patient
 explanation reduction against the best of $N=10$ blind attempts
-($H_1$: explanation $>$ blind); and Cohen's $d$.  All models were
+($H_1$: explanation $>$ blind), with Holm-adjusted $p$-values across the
+eight configurations as a secondary analysis; and Cohen's $d$.  For the
+Model~A vs.~B comparison we report the AUC difference on the same test
+patients with a paired bootstrap CI.  All models were
 implemented with scikit-learn~\cite{pedregosa2011sklearn}.
 
 \subsection{Pre-Registration and Deviations}
@@ -353,18 +384,26 @@ which we corrected so that the code matches the plan (primary $N^*$
 computed from the averaged curve; the pre-registered 2015--2016 lie
 budget; only self-reported values gameable, whereas the measured model
 had been attacked through its nurse-measured inputs).  We also made
-seven changes that \emph{deviate} from the plan: lies only in the
+eight changes that \emph{deviate} from the plan: lies only in the
 realistic direction; the same lie-size rule for both strategies
 (previously the explanation always used the maximum lie while blind
 attempts drew smaller ones); LIME showing all seven features
 (previously five); balanced class weights; a random SHAP background;
-per-patient random seeds; and letting the explanation-guided patient
+per-patient random seeds; letting the explanation-guided patient
 undo a lie that raised their score, as the blind patient implicitly
-can.  Because these settings were chosen after a held-out result had
+can; and reading the sign of a SHAP value relative to the average
+patient (the earlier rule told, e.g., shorter-than-average patients to
+claim to be even shorter; this bug was found by the UCI hand check).  Because these settings were chosen after a held-out result had
 been seen, the 2017--2018 evaluation is not a clean confirmatory test,
 and the change in conclusion should be read with that in mind.  Each
 deviation is a documented switch in the code; the full timeline and the
 first run's results are in \texttt{docs/preregistration\_disclosure.md}.
+
+\paragraph{Confirmatory pre-registration.}\label{sec:confirmatory}
+To obtain a clean test, the corrected analysis, including our predicted
+result, was pre-registered again (\texttt{docs/analysis\_plan\_v5\_confirmatory.md},
+git tag \texttt{v0.2-preregistration}, pushed to GitHub before the data
+was processed) and run once, unchanged, on NHANES 2021--2023.
 
 % ============================================================
 \section{Results}
@@ -388,16 +427,17 @@ matching 2015--2016 ($+1.62$\,cm, SD 3.41; $-0.87$\,kg, SD 4.79).  The
   \label{fig:gaps}
 \end{figure}
 
-\subsection{Main Result: Explanation Equivalence}
+\subsection{Main Result: Explanation Equivalence (2017--2018, exploratory)}
 
-\Cref{tab:main_results} and \cref{fig:main_result} show that
-$N^* = 0.0$ (95\% CI 0.0--0.0) in all eight configurations.  For
-Model B, one explanation-guided lie lowers the risk score by
-0.012--0.022 on average, while a single blind attempt already lowers
-it by 0.024--0.025, and the best of 10 blind attempts by 0.046--0.064
-(\cref{tab:reductions}).  The trial run on 2015--2016 (200 patients)
-gave the same picture ($N^* = 0.0$ in seven configurations and 1.0
-for LR+LIME).
+On the 2017--2018 test set (exploratory, see \cref{sec:preregistration}),
+$N^* = 0.0$ in all eight configurations (\cref{tab:main_results},
+\cref{fig:main_result}); the primary configuration (Model B, RF+SHAP)
+has a 95\% CI of 0.0--1.2.  For Model B, one explanation-guided lie
+lowers the risk score by 0.018--0.024 on average, a single blind
+attempt by 0.024--0.025, and the best of 10 blind attempts by
+0.046--0.064 (\cref{tab:reductions}): an explanation is worth about one
+ordinary attempt at the model, never more.  The confirmatory result on
+2021--2023 is in \cref{sec:confirmatory-results}.
 
 \input{../results/tables/table4_main_results.tex}
 
@@ -407,56 +447,61 @@ for LR+LIME).
   \centering
   \includegraphics[width=0.85\linewidth]{../results/figures/fig2_main_result.png}
   \caption{Mean score reduction from the best of $N$ blind attempts
-           (blue) vs.\ one explanation-guided lie (red dashed), SHAP.
-           For Model B the explanation line lies below the first blind
-           attempt, so $N^*=0$.  Model A cannot be gamed.}
+           (blue) vs.\ one explanation-guided lie (red dashed), SHAP,
+           2017--2018.  For Model B the explanation line does not rise
+           above the first blind attempt, so $N^*=0$.  Model A cannot be
+           gamed.}
   \label{fig:main_result}
 \end{figure*}
 
-\subsection{Why the Explanation Does Not Help}
+\subsection{Why the Explanation Does Not Help More}
 
-Two mechanisms explain the result (\cref{tab:reductions}).
-\emph{First, the explanation often suggests no profitable lie.}  A
-feature attribution describes a feature's contribution relative to an
-average patient, not which change would lower the score.  For LR,
-SHAP gives $\beta_g (x_g - \mathbb{E}[x_g])$: a patient with
-below-average weight sees ``weight lowers your risk'' and is not
-pointed to weight, even though under-reporting weight would lower the
-score further.  For 31\% of patients (LR+SHAP) the explanation
-suggests no realistic lie at all; blind attempts lie anyway and, since
-realistic lies usually help, gain.  \emph{Second, for the Random
-Forest the suggested lie often backfires}: 23\% (SHAP) and 31\% (LIME)
-of explanation-guided lies \emph{raise} the score, because local
-attributions do not describe the model's response over the whole
-range of a lie.  This is the practical face of the impossibility
-result of Bilodeau et al.~\cite{bilodeau2024impossibility}.
+With realistic lies the direction is fixed (taller, lighter) and the
+lie size is drawn the same way for both strategies, so an explanation
+can only tell the patient \emph{which} of height and weight to change;
+two or three blind attempts reveal the same.  For the Random Forest the
+suggested lie also often backfires: 28.5\% (SHAP) and 31.1\% (LIME) of
+explanation-guided lies \emph{raise} the score and are undone, because
+local attributions do not describe the model's response over the whole
+range of a lie, the practical face of the impossibility result of
+Bilodeau et al.~\cite{bilodeau2024impossibility}.  For the Logistic
+Regression, whose response is monotone, no SHAP-guided lie backfires.
+The two late corrections (undoing a bad lie; reading SHAP relative to
+the average patient) raised the primary configuration's explanation
+reduction from 0.013 to 0.018 to 0.023, against 0.024 for one blind
+attempt, without changing $N^*$
+(\texttt{docs/preregistration\_disclosure.md}).
 
 \subsection{Per-Patient Distribution}
 
 Per patient (\cref{fig:hist}), the explanation is no better than one
-blind attempt for 76.0\% of patients (RF+SHAP) and worth 10 or more
-attempts for 8.7\% (6.9\% beat all 100 attempts).  The per-patient mean
-$N^*$ (7.7 for RF+SHAP, 2.6 for LR+SHAP) is therefore driven by a
-small tail, while the average patient gains more from a single
-blind attempt than from the explanation.
+blind attempt for 69.6\% of patients (RF+SHAP) and worth 10 or more
+attempts for 9.5\% (6.7\% beat all 100 attempts).  The per-patient mean
+$N^*$ (7.8 for RF+SHAP, 3.6 for LR+SHAP) is therefore driven by a
+small tail.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{../results/figures/fig7_nstar_histogram.png}
   \caption{Distribution of per-patient $N^*$ (Model B, RF + SHAP;
-           $n=887$ patients).}
+           $n=887$ patients, 2017--2018).}
   \label{fig:hist}
 \end{figure}
 
 \subsection{Model A vs.\ Model B}
 
-Model A, which uses nurse-measured height and weight, cannot be gamed:
-no strategy changes its score (\cref{fig:modelab}, \cref{tab:model_ab}).
+That Model A cannot be gamed is true \emph{by design}: its height and
+weight come from the nurse, so it has no input the patient can change,
+and its zeros in \cref{tab:model_ab} follow from the threat model rather
+than from the experiment.  The measurable comparison has two parts.
 Model B, which differs only in using self-reported values, can be
 lowered by 0.046--0.064 with ten blind attempts and 0.053--0.079 with a
-hundred.  Both models have the same accuracy, so verifying the two
-self-reported inputs removes the vulnerability at no cost in
-performance.
+hundred (\cref{fig:modelab}).  And using measured instead of
+self-reported inputs changes accuracy by an amount indistinguishable
+from zero on the same test patients (\cref{tab:input_source}): AUC
+difference $+0.005$ for RF (95\% CI $-0.009$ to $+0.018$) and $-0.006$
+for LR ($-0.013$ to $+0.000$).  Verifying the two self-reported inputs
+removes the attack surface at no measurable cost in accuracy.
 
 \begin{figure}[t]
   \centering
@@ -468,14 +513,16 @@ performance.
 
 \input{../results/tables/table6_model_ab_comparison.tex}
 
+\input{../results/tables/table6b_input_source_effect.tex}
+
 \subsection{SHAP vs.\ LIME Agreement}
 
 Because each patient receives the same lie size under SHAP and LIME,
 differences come from the explanation alone (\cref{fig:scatter}).  The
-two methods lead to the same outcome for 53\% (RF) and 40\% (LR) of
-patients, with per-patient correlation $r = 0.60$ and $0.55$.  Both
-give $N^*=0$; LIME is slightly better than SHAP for LR (0.022 vs.\
-0.018) and slightly worse for RF (0.012 vs.\ 0.013).
+two methods lead to the same outcome for 74\% (RF) and 71\% (LR) of
+patients, with per-patient correlation $r = 0.65$ and $0.87$.  Both
+give $N^*=0$; SHAP is slightly better than LIME (RF 0.023 vs.\ 0.018;
+LR 0.024 vs.\ 0.022).
 
 \begin{figure*}[t]
   \centering
@@ -487,13 +534,76 @@ give $N^*=0$; LIME is slightly better than SHAP for LR (0.022 vs.\
 
 \subsection{Statistical Tests}
 
-The pre-registered one-sided Wilcoxon test of explanation $>$ blind at
-$N=10$ is not significant in any configuration ($p = 1.0$;
-\cref{tab:stats}).  The effect sizes are large and \emph{negative}
-($d = -0.79$ to $-1.34$ for Model B): ten blind attempts lower the
-score clearly more than one explanation.
+The one-sided Wilcoxon test of explanation $>$ blind at $N=10$ is not
+significant in any configuration ($p = 1.0$, also after Holm
+correction; \cref{tab:stats}).  The effect sizes are large and
+\emph{negative} ($d = -0.66$ to $-1.24$ for Model B): ten blind
+attempts lower the score clearly more than one explanation.
 
 \input{../results/tables/table5_statistical_tests.tex}
+
+\subsection{Comparison Dataset: CDC Diabetes Health Indicators}
+
+On 1{,}000 sampled test respondents of BRFSS 2015 (UCI 891), with
+self-reported BMI as the only gameable feature, the result is the same
+(\cref{tab:uci891}): $N^* = 0.0$ in all four configurations (upper CI
+bound at most 1.1); one explanation-guided lie lowers the score by
+0.026--0.041 against 0.037--0.044 for one blind attempt.  BRFSS has no
+measured BMI and a self-reported diabetes label, so this supports only
+the Model~B finding, with a BMI lie budget borrowed from NHANES.
+
+\input{../results/tables/table8_uci891_comparison.tex}
+
+\subsection{Confirmatory Result: NHANES 2021--2023}
+\label{sec:confirmatory-results}
+
+The confirmatory run used the code and settings fixed at the
+\texttt{v0.2-preregistration} tag (commit \texttt{5b2f240}), unchanged,
+on NHANES August 2021--August 2023: 5{,}628 adults with complete data
+(11.9\% with diabetes) and 1{,}126 test patients.  The reporting gap was
+again stable (height $+1.73$\,cm, weight $-0.65$\,kg on average;
+95th percentiles 6.84\,cm and 9.04\,kg against the 7.28\,cm and
+8.96\,kg budget used).
+
+\begin{table*}[t]
+  \centering
+  \caption{Confirmatory result, NHANES 2021--2023 (pre-registered,
+           $n = 1{,}126$ test patients). Mean score reductions; Model A
+           (measured) is 0 in every column by design.}
+  \label{tab:confirmatory}
+  \small
+  \begin{tabular}{lrcrrrr}
+    \toprule
+    Model B config & $N^*$ & 95\% CI & 1 expl. & 1 blind & 10 blind & Cohen's $d$ \\
+    \midrule
+    RF + SHAP (primary) & 1.42 & [1.21, 1.62] & 0.034 & 0.028 & 0.070 & $-0.71$ \\
+    RF + LIME & 0.00 & [0.00, 0.00] & 0.024 & 0.028 & 0.070 & $-0.76$ \\
+    LR + SHAP & 1.07 & [0.00, 1.20] & 0.035 & 0.035 & 0.062 & $-1.14$ \\
+    LR + LIME & 0.00 & [0.00, 0.00] & 0.032 & 0.035 & 0.062 & $-1.19$ \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+For the primary configuration, $N^* = 1.42$ (95\% CI 1.21--1.62): one
+SHAP explanation is worth about one and a half blind attempts, inside
+the pre-registered ``minimal advantage'' band ($N^* < 5$), and the
+upper confidence bound is far below 5 (\cref{tab:confirmatory}).
+Across Model~B, $N^*$ ranges from 0 to 1.42; the one-sided Wilcoxon
+test of explanation $>$ ten blind attempts is not significant in any
+configuration ($p = 1.0$, also after Holm correction), with large
+negative effect sizes.  Every pre-registered prediction held.  As in
+2017--2018, Random Forest lies suggested by an explanation backfired
+for 27\% of patients.  Unlike 2017--2018, SHAP now does slightly
+\emph{better} than one blind attempt (0.034 vs.\ 0.028 for the Random
+Forest), which is why $N^*$ is above zero; LIME does not.
+
+Model~A again cannot be gamed.  The accuracy difference between
+measured and self-reported inputs on the same test patients is $+0.006$
+for the Random Forest (95\% CI $-0.014$ to $+0.026$) and $-0.012$ for
+the Logistic Regression ($-0.023$ to $-0.002$), i.e.\ in this cycle the
+self-reported Logistic Regression is slightly \emph{more} accurate.
+Either way the difference is about one hundredth of AUC, small against
+the 0.06--0.07 by which ten blind lies lower a Model~B score.
 
 % ============================================================
 \section{Discussion}
@@ -504,8 +614,9 @@ score clearly more than one explanation.
 Our pre-registered interpretation guide set three bands: $N^*<5$
 (withholding explanations is not a meaningful safeguard),
 $5 \le N^* \le 20$ (moderate advantage), and $N^*>20$ (explanations are
-powerful attack vectors).  With $N^* = 0$ in every configuration, the
-result falls in the first band.  Under realistic lies, an explanation
+powerful attack vectors).  With $N^* \le 1.42$ in every configuration
+of the confirmatory test (upper CI bound 1.62), the result falls in the
+first band.  Under realistic lies, an explanation
 does not give a patient a better route to a lower score than simply
 trying an answer; withholding it would remove information from honest
 users while barely slowing a motivated one.  The vulnerability lies
@@ -528,17 +639,24 @@ should I change?'', and the two can point in different directions.
         attempt changes one feature once; multi-feature lies could be
         more powerful for both strategies.
   \item \textbf{Lie model.} Lie size is uniform within the
-        95th-percentile gap and in the observed direction.  Using the
-        maximum lie, or allowing either direction, is a one-line change
-        in our code; we leave that sensitivity analysis to future work.
-  \item \textbf{Single domain and dataset.} Results are for diabetes
-        risk from anthropometric self-report in NHANES.
+        95th-percentile gap and in the observed direction, so an
+        explanation can only choose \emph{which} feature to change.
+        Using the maximum lie, or allowing either direction, is a
+        one-line change in our code; we leave that sensitivity analysis
+        to future work.
+  \item \textbf{Domain.} Results are for diabetes risk from
+        anthropometric self-report (NHANES, and BRFSS as a comparison
+        whose diabetes label is itself self-reported).
+  \item \textbf{Survey changes.} In 2021--2023 blood pressure is
+        measured oscillometrically and the activity question was
+        redesigned; we mapped both before seeing the data.
   \item \textbf{Pre-registration and deviations.} The plan was
         recorded as a git tag in the project repository rather than an
-        independent registry; a first run on the held-out data was
-        seen before the analysis was corrected, and seven settings
-        deviate from the plan (\cref{sec:preregistration}).  The held-out
-        result is therefore not a clean confirmatory test.
+        independent registry; a first run on the 2017--2018 data was
+        seen before the analysis was corrected, and eight settings
+        deviate from the first plan (\cref{sec:preregistration}).  We
+        therefore treat 2017--2018 as exploratory and rest our
+        conclusion on the re-registered 2021--2023 test.
 \end{itemize}
 
 \subsection{Recommendations for Practitioners}
@@ -559,12 +677,13 @@ should I change?'', and the two can point in different directions.
 We introduced the \emph{explanation equivalence} metric $N^*$ and
 applied it to a diabetes risk model using real NHANES survey data,
 with lies bounded by how people actually misreport.  In a
-pre-registered evaluation on held-out 2017--2018 data, one SHAP or
-LIME explanation was worth fewer than one blind attempt
-($N^*=0$, 95\% CI 0--0, in all eight configurations): explanations
-often pointed patients away from a profitable lie or, for the Random
-Forest, towards one that raised their score.  A model using
-nurse-measured inputs could not be gamed at all.  The effective
+pre-registered confirmatory test on unseen NHANES 2021--2023 data, one
+SHAP or LIME explanation was worth at most about one and a half blind
+attempts ($N^* = 1.42$, 95\% CI 1.21--1.62, for the primary
+configuration; 0--1.42 overall), and an exploratory 2017--2018 analysis
+and a second survey agreed.  For the Random Forest, explanation-guided
+lies often raised the score instead.  A model using nurse-measured
+inputs could not be gamed and was as accurate.  The effective
 safeguard against gaming is therefore verifying self-reported inputs,
 not withholding explanations.
 
